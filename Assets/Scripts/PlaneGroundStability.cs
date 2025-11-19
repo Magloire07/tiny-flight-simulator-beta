@@ -9,6 +9,8 @@ using MFlight.Demo;
 [DefaultExecutionOrder(50)]
 public class PlaneGroundStability : MonoBehaviour
 {
+    // Global switch to silence all OnGUI debug output from this component, regardless of instance settings.
+    public static bool DisableAllOnScreenDebug = true;
     [Header("Références")]
     public MFlight.Demo.Plane plane; // assigner l'avion; auto-récup si null
     public WheelCollider[] wheelColliders; // si vide, auto-récup dans enfants
@@ -31,7 +33,7 @@ public class PlaneGroundStability : MonoBehaviour
     [Tooltip("Damping vertical linéaire (0-1) pour coller au sol")] [Range(0f,1f)] public float verticalVelocityDamping = 0.75f;
     [Tooltip("Damping de lacet (Y) local (0-1)")] [Range(0f,1f)] public float yawDampingWhileHeld = 0.4f;
     [Tooltip("Appliquer la force vers le bas répartie à chaque roue")] public bool distributeForcePerWheel = true;
-    [Tooltip("Afficher un label debug à l'écran")] public bool showDebug = true;
+    [Tooltip("Afficher un label debug à l'écran")] public bool showDebug = false;
 
     [Header("Renforcement (Anti-Décollage Prématuré)")]
     [Tooltip("Supprimer quasi totalement la portance aérodynamique tant que hold actif")] public bool suppressLiftWhileHeld = true;
@@ -54,7 +56,7 @@ public class PlaneGroundStability : MonoBehaviour
 
     [Header("Robustesse / Debug")]
     [Tooltip("Maintenir le hold tant que la vitesse < releaseSpeed même si moins de roues que minGroundedWheels (≥1)")] public bool relaxWheelRequirementAtLowSpeed = true;
-    [Tooltip("Afficher un tableau par roue")] public bool showPerWheelStatus = true;
+    [Tooltip("Afficher un tableau par roue")] public bool showPerWheelStatus = false;
 
     private Rigidbody rb;
     private bool isHeld;
@@ -226,20 +228,6 @@ public class PlaneGroundStability : MonoBehaviour
 
     void OnGUI()
     {
-        if (!showDebug) return;
-        string settleStr = settleTimer > 0f ? " (settling)" : string.Empty;
-        GUI.Label(new Rect(10, Screen.height - 60, 640, 50), $"GroundHold: {(isHeld ? "ACTIVE" : "Released")}{settleStr}  WheelsGrounded: {CountGroundedWheels()}  Speed: {plane?.Airspeed:F1}/{(usePlaneTakeoffSpeed ? plane?.takeoffMinSpeed : customReleaseSpeed):F1}  Reason: {releaseReason}");
-        if (showPerWheelStatus && wheelColliders != null)
-        {
-            int y = Screen.height - 110;
-            for (int i = 0; i < wheelColliders.Length; i++)
-            {
-                var wc = wheelColliders[i];
-                if (wc == null) continue;
-                bool g = WheelIsGrounded(wc);
-                GUI.Label(new Rect(10, y, 400, 20), $"Wheel[{i}] {wc.name} Grounded: {g}");
-                y -= 20;
-            }
-        }
+        return;
     }
 }

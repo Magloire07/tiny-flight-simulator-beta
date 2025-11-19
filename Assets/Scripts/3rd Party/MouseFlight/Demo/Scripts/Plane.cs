@@ -119,6 +119,10 @@ namespace MFlight.Demo
     // GUI debug style and background texture cache
     private GUIStyle debugStyle;
     private Texture2D debugBgTex;
+    
+    [Header("Debug")] 
+    [Tooltip("Afficher l'ancien overlay debug en haut à gauche (OnGUI)")]
+    public bool showDebugOverlay = false;
 
         private void Awake()
         {
@@ -431,6 +435,7 @@ namespace MFlight.Demo
 
         void OnGUI()
         {
+            if (!showDebugOverlay) return; // désactive les anciens indicateurs à fond noir
             // Debug display with background and larger font
             EnsureDebugStyle();
 
