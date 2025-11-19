@@ -7,20 +7,20 @@ namespace MFlight.Demo
     {
         [Header("Lift Properties")]
         [Tooltip("Surface area of the wings in square meters")]
-        public float wingArea = 16.0f;  // Approximation for a small aircraft
+        public float wingArea = 8.0f;  // Ajusté pour un petit avion léger
         
         [Tooltip("Maximum lift coefficient")]
-        public float maxLiftCoef = 1.5f;
+        public float maxLiftCoef = 1.2f;
         
         [Tooltip("Angle of attack (in degrees) where maximum lift occurs")]
-        public float criticalAngleOfAttack = 15f;
+        public float criticalAngleOfAttack = 12f;
         
         [Tooltip("Angle of attack (in degrees) where stall begins")]
-        public float stallAngle = 17f;
+        public float stallAngle = 15f;
 
         [Header("Drag Properties")]
         [Tooltip("Base drag coefficient (when angle of attack is 0)")]
-        public float parasiteDragCoef = 0.025f;
+        public float parasiteDragCoef = 0.03f;
         
         [Tooltip("How much drag increases with angle of attack")]
         public float inducedDragFactor = 0.1f;
@@ -30,7 +30,7 @@ namespace MFlight.Demo
         public float airDensity = 1.225f;
         
         [Tooltip("How quickly the plane responds to aerodynamic forces")]
-        public float responseMultiplier = 0.5f;  // Réduit pour Unity 6
+        public float responseMultiplier = 1f;
 
         [Header("Control Surface Effectiveness")]
         [Tooltip("How control effectiveness changes with airspeed")]

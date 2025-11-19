@@ -4,6 +4,7 @@
 //
 
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MFlight.Demo
 {
@@ -11,10 +12,13 @@ namespace MFlight.Demo
     {
         [Header("Components")]
         [SerializeField] private MouseFlightController mouseFlight = null;
+        [SerializeField] private Plane plane = null;
 
         [Header("HUD Elements")]
         [SerializeField] private RectTransform boresight = null;
         [SerializeField] private RectTransform mousePos = null;
+        [Tooltip("Optional: Slider (0..1) to display throttle")] [SerializeField] private Slider throttleSlider = null;
+        [Tooltip("Optional: Text to display throttle percent")] [SerializeField] private Text throttleText = null;
 
         private Camera playerCam = null;
 
@@ -25,7 +29,10 @@ namespace MFlight.Demo
 
             playerCam = Camera.main;
 
-          
+            if (plane == null)
+            {
+                plane = FindObjectOfType<Plane>();
+            }
         }
 
         private void Update()
@@ -33,7 +40,25 @@ namespace MFlight.Demo
             if (mouseFlight == null || playerCam == null)
                 return;
 
+            UpdateThrottleUI();
             UpdateGraphics(mouseFlight);
+        }
+
+        private void UpdateThrottleUI()
+        {
+            if (plane == null)
+                return;
+
+            if (throttleSlider != null)
+            {
+                throttleSlider.value = plane.throttle; // expect slider min=0, max=1
+            }
+
+            if (throttleText != null)
+            {
+                int pct = Mathf.RoundToInt(plane.throttle * 100f);
+                throttleText.text = pct.ToString() + "%";
+            }
         }
 
         private void UpdateGraphics(MouseFlightController controller)

@@ -25,6 +25,12 @@ namespace MFlight
 
         [Header("Options")]
         public Vector3 offset;
+    [SerializeField] [Tooltip("If true, align the camera rig and mouse aim to the aircraft's position and forward direction at start.")]
+    private bool alignCameraToAircraftOnStart = true;
+    [SerializeField] [Tooltip("Allow realigning the camera to the aircraft at runtime via a key press.")]
+    private bool allowRuntimeRealign = true;
+    [SerializeField] [Tooltip("Key used to realign the camera rig to the aircraft when Allow Runtime Realign is enabled.")]
+    private KeyCode realignKey = KeyCode.R;
         [SerializeField] [Tooltip("Follow aircraft using fixed update loop")]
         private bool useFixed = true;
 
@@ -100,6 +106,14 @@ namespace MFlight
                 Cursor.lockState = CursorLockMode.Confined;
                 Cursor.visible = false;
             }
+
+            // Optionally align the camera rig and mouse aim to the aircraft at startup so
+            // the initial view is above/parallel to the aircraft regardless of the
+            // aircraft's editor transform.
+            if (alignCameraToAircraftOnStart && aircraft != null)
+            {
+                RealignToAircraft();
+            }
         }
 
         private void Update()
@@ -112,6 +126,12 @@ namespace MFlight
                 UpdateCameraPos();
 
             RotateRig();
+
+            // Runtime realign: allow player to realign the camera rig to the aircraft while flying
+            if (allowRuntimeRealign && Input.GetKeyDown(realignKey) && aircraft != null)
+            {
+                RealignToAircraft();
+            }
         }
 
         private void FixedUpdate()
@@ -180,6 +200,35 @@ namespace MFlight
             {
                 // Move the whole rig to follow the aircraft.
                 transform.position = aircraft.position;
+            }
+        }
+
+        /// <summary>
+        /// Realign the camera rig, camera and mouse aim to the aircraft's position and forward.
+        /// Useful for restoring a top/parallel view during gameplay.
+        /// </summary>
+        private void RealignToAircraft()
+        {
+            // Move rig to aircraft position
+            transform.position = aircraft.position;
+
+            if (cameraRig != null)
+            {
+                cameraRig.position = aircraft.position;
+                // Make the rig face the same forward direction as the aircraft, with world up
+                cameraRig.rotation = Quaternion.LookRotation(aircraft.forward, Vector3.up);
+            }
+
+            if (mouseAim != null)
+            {
+                mouseAim.position = aircraft.position + (aircraft.forward * 1f);
+                mouseAim.forward = aircraft.forward;
+            }
+
+            if (cam != null && cameraRig != null)
+            {
+                cam.position = cameraRig.position + cameraRig.up * offset.y + cameraRig.forward * offset.z + cameraRig.right * offset.x;
+                cam.rotation = cameraRig.rotation;
             }
         }
 
