@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="800" height="800" viewBox="0 0 800 800">
+
+  <defs>
+    <style><![CDATA[
+      .sky { fill: rgb(150, 200, 255); }
+      .ground { fill: rgb(170, 120, 75); }
+      .horizon-line { stroke: #ffffff; stroke-width: 6; }
+
+      .ring { stroke: #222; stroke-width: 4; fill:none; }
+      .bank-arc { stroke:#222; stroke-width:10; fill:none; }
+      .bank-mark { stroke:#fff; stroke-width:6; stroke-linecap:round; }
+      .bank-triangle { fill:#fff; }
+
+      .pitch-line { stroke:#fff; stroke-width:4; }
+      .pitch-long  { stroke-width:6; }
+      .pitch-text { fill:#fff; font-size:30px; font-family:Arial; }
+
+      .center-dot { fill:#111; }
+    ]]></style>
+  </defs>
+
+  <g transform="translate(400,400)">
+
+    <!-- CERCLE EXTERNE -->
+    <circle class="ring" r="300"/>
+
+    <!-- DEMI-CERCLE CIEL -->
+    <path class="sky" d="
+      M -300 0
+      A 300 300 0 0 1 300 0
+      Z" />
+
+    <!-- DEMI-CERCLE SOL -->
+    <path class="ground" d="
+      M -300 0
+      A 300 300 0 0 0 300 0
+      Z" />
+
+    <!-- LIGNE D'HORIZON -->
+    <line class="horizon-line" x1="-300" y1="0" x2="300" y2="0"/>
+
+    <!-- ARC DE ROULIS (BANK) -->
+    <path class="bank-arc"
+          d="M -200 -260
+             A 330 330 0 0 1 200 -260" />
+
+    <!-- Triangle de bank 0° -->
+    <polygon class="bank-triangle" points="0,-280  -12,-250  12,-250"/>
+
+    <!-- Marques de bank : 10°, 20°, 30°, 45°, 60° -->
+    <!-- Fonction utilitaire : une marque = rotation + ligne -->
+    <!-- Longues = 30° et 60° ; courtes = 10° et 20° ; moyenne = 45° -->
+
+    <!-- 10° right -->
+    <g transform="rotate(10)">
+      <line class="bank-mark" x1="0" y1="-270" x2="0" y2="-250"/>
+    </g>
+
+    <!-- 20° right -->
+    <g transform="rotate(20)">
+      <line class="bank-mark" x1="0" y1="-275" x2="0" y2="-245"/>
+    </g>
+
+    <!-- 30° right (longue) -->
+    <g transform="rotate(30)">
+      <line class="bank-mark" x1="0" y1="-285" x2="0" y2="-230"/>
+    </g>
+
+    <!-- 45° right -->
+    <g transform="rotate(45)">
+      <line class="bank-mark" x1="0" y1="-280" x2="0" y2="-245"/>
+    </g>
+
+    <!-- 60° right (longue) -->
+    <g transform="rotate(60)">
+      <line class="bank-mark" x1="0" y1="-285" x2="0" y2="-230"/>
+    </g>
+
+    <!-- MIRROR LEFT -->
+    <g transform="rotate(-10)">
+      <line class="bank-mark" x1="0" y1="-270" x2="0" y2="-250"/>
+    </g>
+    <g transform="rotate(-20)">
+      <line class="bank-mark" x1="0" y1="-275" x2="0" y2="-245"/>
+    </g>
+    <g transform="rotate(-30)">
+      <line class="bank-mark" x1="0" y1="-285" x2="0" y2="-230"/>
+    </g>
+    <g transform="rotate(-45)">
+      <line class="bank-mark" x1="0" y1="-280" x2="0" y2="-245"/>
+    </g>
+    <g transform="rotate(-60)">
+      <line class="bank-mark" x1="0" y1="-285" x2="0" y2="-230"/>
+    </g>
+
+    <!-- PITCH LADDER (assiette) -->
+    <!-- +5°, +10°, +15° -->
+    <g>
+
+      <!-- +5° -->
+      <g transform="translate(0,-40)">
+        <line class="pitch-line" x1="-80" y1="0" x2="80" y2="0"/>
+      </g>
+
+      <!-- +10° -->
+      <g transform="translate(0,-80)">
+        <line class="pitch-line pitch-long" x1="-120" y1="0" x2="120" y2="0"/>
+        <text class="pitch-text" x="-150" y="10">10</text>
+        <text class="pitch-text" x="150" y="10">10</text>
+      </g>
+
+      <!-- +15° -->
+      <g transform="translate(0,-120)">
+        <line class="pitch-line" x1="-80" y1="0" x2="80" y2="0"/>
+      </g>
+
+      <!-- -5° -->
+      <g transform="translate(0,40)">
+        <line class="pitch-line" x1="-80" y1="0" x2="80" y2="0"/>
+      </g>
+
+      <!-- -10° -->
+      <g transform="translate(0,80)">
+        <line class="pitch-line pitch-long" x1="-120" y1="0" x2="120" y2="0"/>
+        <text class="pitch-text" x="-150" y="10">10</text>
+        <text class="pitch-text" x="150" y="10">10</text>
+      </g>
+
+      <!-- -15° -->
+      <g transform="translate(0,120)">
+        <line class="pitch-line" x1="-80" y1="0" x2="80" y2="0"/>
+      </g>
+
+    </g>
+
+    <!-- Centre -->
+    <circle class="center-dot" r="10"/>
+
+  </g>
+</svg>

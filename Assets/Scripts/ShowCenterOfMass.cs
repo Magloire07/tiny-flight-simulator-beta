@@ -1,8 +1,11 @@
 using UnityEngine;
 
-[ExecuteAlways]
 public class ShowCenterOfMass : MonoBehaviour
 {
+    [Header("Enable/Disable")]
+    [Tooltip("Activer/désactiver l'affichage du centre de masse.")] 
+    public bool enableGizmos = true;
+    
     [Header("Target Rigidbody (optional)")] public Rigidbody rb;
 
     [Header("Sphere Settings")] public float sphereSize = 0.12f;
@@ -30,6 +33,8 @@ public class ShowCenterOfMass : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (!enableGizmos) return; // Ne rien dessiner si désactivé
+        
         if (rb == null) rb = GetComponent<Rigidbody>();
         if (rb == null) return;
 

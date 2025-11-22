@@ -21,26 +21,48 @@ public class PlaneHUDUI : MonoBehaviour
     public Text gpsText;
 
     [Header("Gauges")]
-    [Tooltip("Image type=Filled pour le throttle (0..1)")] public Image throttleArc;
-    public Text throttleText;
-    [Tooltip("Image type=Filled pour le fuel (0..1)")] public Image fuelArc;
+    [Header("Vitesse")]
+    [Tooltip("RectTransform du cadran de vitesse fixe.")] public RectTransform speedCadran;
+    [Tooltip("RectTransform de l'aiguille de vitesse (qui tourne selon la vitesse).")] public RectTransform speedAiguille;
+    public Text speedTextGauge;
+    [Tooltip("Vitesse maximale sur le cadran (km/h).")] public float maxSpeedKmh = 200f;
+    
+    [Header("Compas")]
+    [Tooltip("RectTransform du cadran de cap fixe.")] public RectTransform capCadran;
+    [Tooltip("RectTransform de l'aiguille de cap (qui tourne selon le heading).")] public RectTransform capAiguille;
+    
+    [Header("Fuel")]
+    [Tooltip("RectTransform du cadran de fuel fixe.")] public RectTransform fuelCadran;
+    [Tooltip("RectTransform de l'aiguille de fuel (qui tourne selon le niveau).")] public RectTransform fuelAiguille;
     public Text fuelText;
     [Range(0f,1f)] public float fuel01 = 0.98f;
 
-    [Header("Vertical Speed Indicator")]
-    [Tooltip("Image type=Filled vertical (fillAmount 0..1)")] public Image vsiBar;
-    public Text vsiText;
-    [Tooltip("± plage m/s pour l'indicateur vertical")] public float vsiRange = 20f;
-
     [Header("Horizon Artificiel")]
-    [Tooltip("RectTransform à faire pivoter pour le roulis.")] public RectTransform horizonRollLayer;
-    [Tooltip("RectTransform à déplacer verticalement pour le tangage (enfants du layer roulis de préférence).")]
-    public RectTransform horizonPitchLayer;
+    [Tooltip("RectTransform du cadran fixe (fond stable).")] public RectTransform horizonCadran;
+    [Tooltip("RectTransform de l'aiguille horizontale (qui tourne et se déplace).")] public RectTransform horizonAiguille;
     [Tooltip("Pixels de décalage vertical par degré de pitch.")] public float pitchPixelsPerDegree = 4f;
     [Tooltip("Lisser la transition (0 = instantané).")][Range(0f,1f)] public float smoothFactor = 0.15f;
 
+    [Header("Map Zone")]
+    [Tooltip("RectTransform pour la zone de la carte (future implémentation).")] public RectTransform mapZone;
+    [Tooltip("Créer automatiquement la zone de carte si non assignée.")] public bool autoCreateMapZone = true;
+    [Tooltip("Taille de la zone de carte.")] public Vector2 mapZoneSize = new Vector2(400, 300);
+    [Tooltip("Position ancrée de la zone de carte.")] public Vector2 mapZonePosition = new Vector2(-220, -170);
+    [Tooltip("Couleur de fond de la zone de carte.")] public Color mapZoneColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
+
     private float displayedPitch;
     private float displayedRoll;
+    private float displayedHeading;
+    private float displayedSpeed;
+    private Vector3 baseAiguilleWorldPosition;
+    private Vector3 baseCapAiguilleWorldPosition;
+    private Vector3 baseFuelAiguilleWorldPosition;
+    private Vector3 baseSpeedAiguilleWorldPosition;
+    private Quaternion initialFuelRotation;
+    private bool isInitialized = false;
+    private bool isCapInitialized = false;
+    private bool isFuelInitialized = false;
+    private bool isSpeedInitialized = false;
 
     private void Awake()
     {
@@ -49,6 +71,47 @@ public class PlaneHUDUI : MonoBehaviour
         {
             if (provider != null && provider.plane != null) plane = provider.plane;
             else plane = FindObjectOfType<DemoPlane>();
+        }
+        
+        // Initialiser la position de base de l'aiguille pour l'aligner avec le cadran
+        if (horizonCadran != null && horizonAiguille != null)
+        {
+            // Aligner au centre world du cadran (indépendant de la taille des images)
+            baseAiguilleWorldPosition = horizonCadran.position;
+            horizonAiguille.position = baseAiguilleWorldPosition;
+            isInitialized = true;
+        }
+        
+        // Initialiser la position de base de l'aiguille de cap
+        if (capCadran != null && capAiguille != null)
+        {
+            // Aligner au centre world du cadran (indépendant de la taille des images)
+            baseCapAiguilleWorldPosition = capCadran.position;
+            capAiguille.position = baseCapAiguilleWorldPosition;
+            isCapInitialized = true;
+        }
+        
+        // Initialiser la position de base de l'aiguille de fuel
+        if (fuelCadran != null && fuelAiguille != null)
+        {
+            // Aligner au centre world du cadran (indépendant de la taille des images)
+            baseFuelAiguilleWorldPosition = fuelCadran.position;
+            fuelAiguille.position = baseFuelAiguilleWorldPosition;
+            // L'aiguille à rotation Z = 0 correspond à 100% (réservoir plein)
+            fuelAiguille.localRotation = Quaternion.identity;
+            initialFuelRotation = Quaternion.identity;
+            isFuelInitialized = true;
+        }
+        
+        // Initialiser la position de base de l'aiguille de vitesse
+        if (speedCadran != null && speedAiguille != null)
+        {
+            // Aligner au centre world du cadran (indépendant de la taille des images)
+            baseSpeedAiguilleWorldPosition = speedCadran.position;
+            speedAiguille.position = baseSpeedAiguilleWorldPosition;
+            // L'aiguille à rotation Z = 0 correspond à la vitesse maximale
+            speedAiguille.localRotation = Quaternion.identity;
+            isSpeedInitialized = true;
         }
     }
 
@@ -67,6 +130,10 @@ public class PlaneHUDUI : MonoBehaviour
         // Lissage simple
         displayedPitch = Mathf.Lerp(displayedPitch, pitch, 1f - smoothFactor);
         displayedRoll = Mathf.Lerp(displayedRoll, roll, 1f - smoothFactor);
+        displayedHeading = Mathf.LerpAngle(displayedHeading, hdg, 1f - smoothFactor);
+        // Convertir la vitesse de knots en km/h pour l'affichage
+        float speedKmh = speedKt * 1.852f;
+        displayedSpeed = Mathf.Lerp(displayedSpeed, speedKmh, 1f - smoothFactor);
 
         // Textes
         if (speedText) speedText.text = string.Format("SPD {0:F0} kt", speedKt);
@@ -83,34 +150,78 @@ public class PlaneHUDUI : MonoBehaviour
                 gpsText.text = string.Format("POS X:{0:F0} Y:{1:F0} Z:{2:F0}", provider.WorldPosition.x, provider.WorldPosition.y, provider.WorldPosition.z);
         }
 
-        // Throttle / Fuel gauges
-        if (plane != null)
+        // Compas (Cap)
+        if (capAiguille)
         {
-            float thr = Mathf.Clamp01(plane.throttle);
-            if (throttleArc) throttleArc.fillAmount = thr;
-            if (throttleText) throttleText.text = string.Format("{0:0}%", thr * 100f);
+            // S'assurer que la position de base est initialisée
+            if (!isCapInitialized && capCadran != null)
+            {
+                baseCapAiguilleWorldPosition = capCadran.position;
+                isCapInitialized = true;
+            }
+            
+            // Rotation de l'aiguille selon le heading (Nord en haut = 0°)
+            capAiguille.localRotation = Quaternion.Euler(0f, 0f, -displayedHeading);
+            capAiguille.position = baseCapAiguilleWorldPosition;
         }
-        if (fuelArc) fuelArc.fillAmount = Mathf.Clamp01(fuel01);
+        
+        // Vitesse (cadran et aiguille)
+        if (speedAiguille)
+        {
+            // S'assurer que la position de base est initialisée
+            if (!isSpeedInitialized && speedCadran != null)
+            {
+                baseSpeedAiguilleWorldPosition = speedCadran.position;
+                isSpeedInitialized = true;
+            }
+            
+            // Rotation de l'aiguille selon la vitesse
+            // 0 km/h = -120°, maxSpeedKmh = 0°
+            float speedRatio = Mathf.Clamp01(displayedSpeed / maxSpeedKmh);
+            float speedAngle = -120f + (speedRatio * 120f);
+            speedAiguille.localRotation = Quaternion.Euler(0f, 0f, speedAngle);
+            speedAiguille.position = baseSpeedAiguilleWorldPosition;
+        }
+        if (speedTextGauge) speedTextGauge.text = string.Format("{0:0} km/h", displayedSpeed);
+        
+        // Fuel gauge (cadran et aiguille)
+        if (fuelAiguille)
+        {
+            // S'assurer que la position de base est initialisée
+            if (!isFuelInitialized && fuelCadran != null)
+            {
+                baseFuelAiguilleWorldPosition = fuelCadran.position;
+                initialFuelRotation = Quaternion.identity;
+                isFuelInitialized = true;
+            }
+            
+            // Rotation de l'aiguille selon le niveau de fuel
+            // 100% = 0°, 50% = -60°, 0% = -120°
+            float fuelAngle = -120f + (Mathf.Clamp01(fuel01) * 120f);
+            fuelAiguille.localRotation = Quaternion.Euler(0f, 0f, fuelAngle);
+            fuelAiguille.position = baseFuelAiguilleWorldPosition;
+        }
         if (fuelText) fuelText.text = string.Format("{0:0}%", Mathf.Clamp01(fuel01) * 100f);
 
-        // VSI (vertical speed) as bar 0..1 where 0.5 = 0 m/s
-        if (vsiBar)
-        {
-            float t = Mathf.InverseLerp(-vsiRange, vsiRange, Mathf.Clamp(vs, -vsiRange, vsiRange));
-            vsiBar.fillAmount = t; // requires Filled vertical
-        }
-        if (vsiText) vsiText.text = string.Format("{0:+0.0;-0.0;0.0}", vs);
-
         // Horizon artificiel
-        if (horizonRollLayer)
+        // Le cadran reste fixe (horizonCadran ne bouge pas)
+        // L'aiguille tourne selon le roll ET se déplace verticalement selon le pitch
+        if (horizonAiguille)
         {
-            horizonRollLayer.localRotation = Quaternion.Euler(0f, 0f, -displayedRoll); // roulis inverse pour aspect standard
-        }
-        if (horizonPitchLayer)
-        {
-            var ap = horizonPitchLayer.anchoredPosition;
-            ap.y = -displayedPitch * pitchPixelsPerDegree; // pitch haut => déplacer layer vers le bas
-            horizonPitchLayer.anchoredPosition = ap;
+            // S'assurer que la position de base est initialisée
+            if (!isInitialized && horizonCadran != null)
+            {
+                baseAiguilleWorldPosition = horizonCadran.position;
+                isInitialized = true;
+            }
+            
+            // Rotation de l'aiguille selon le roll (vers la gauche ou la droite)
+            horizonAiguille.localRotation = Quaternion.Euler(0f, 0f, -displayedRoll);
+            
+            // Déplacement vertical selon le pitch (haut ou bas) à partir de la position du cadran
+            Vector3 worldPos = baseAiguilleWorldPosition;
+            worldPos.y += -displayedPitch * pitchPixelsPerDegree; // pitch positif => aiguille descend
+            horizonAiguille.position = worldPos;
         }
     }
 }

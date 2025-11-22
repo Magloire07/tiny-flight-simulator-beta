@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="800" height="800" viewBox="0 0 800 800">
+
+  <defs>
+    <style><![CDATA[
+      .needle { fill:#ff7f00; }
+      .center-dot { fill:#ff7f00; }
+    ]]></style>
+  </defs>
+
+  <!-- Centre : (400, 400) -->
+  <g transform="translate(400,400)">
+
+    <!-- Aiguille horizontale : barre + pointe -->
+    <polygon class="needle"
+             points="-260,0   -20,-12   -20,12"/>
+    <polygon class="needle"
+             points="260,0    20,-12    20,12"/>
+
+    <!-- Point central -->
+    <circle class="center-dot" r="14"/>
+
+  </g>
+</svg>
