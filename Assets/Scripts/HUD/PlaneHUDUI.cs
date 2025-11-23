@@ -40,7 +40,8 @@ public class PlaneHUDUI : MonoBehaviour
     [Header("Horizon Artificiel")]
     [Tooltip("RectTransform du cadran fixe (fond stable).")] public RectTransform horizonCadran;
     [Tooltip("RectTransform de l'aiguille horizontale (qui tourne et se déplace).")] public RectTransform horizonAiguille;
-    [Tooltip("Pixels de décalage vertical par degré de pitch.")] public float pitchPixelsPerDegree = 4f;
+    [Tooltip("Pixels de décalage vertical par degré de pitch.")] public float pitchPixelsPerDegree = 3f;
+    [Tooltip("Angle de pitch maximum (en degrés) avant que l'aiguille soit bornée.")] public float maxPitchAngle = 8f;
     [Tooltip("Lisser la transition (0 = instantané).")][Range(0f,1f)] public float smoothFactor = 0.15f;
 
     [Header("Map Zone")]
@@ -109,7 +110,7 @@ public class PlaneHUDUI : MonoBehaviour
             // Aligner au centre world du cadran (indépendant de la taille des images)
             baseSpeedAiguilleWorldPosition = speedCadran.position;
             speedAiguille.position = baseSpeedAiguilleWorldPosition;
-            // L'aiguille à rotation Z = 0 correspond à la vitesse maximale
+            // L'aiguille à rotation Z = 0° correspond à 0 km/h
             speedAiguille.localRotation = Quaternion.identity;
             isSpeedInitialized = true;
         }
@@ -176,9 +177,9 @@ public class PlaneHUDUI : MonoBehaviour
             }
             
             // Rotation de l'aiguille selon la vitesse
-            // 0 km/h = -120°, maxSpeedKmh = 0°
+            // 0 km/h = 0°, maxSpeedKmh = -240° (rotation horaire)
             float speedRatio = Mathf.Clamp01(displayedSpeed / maxSpeedKmh);
-            float speedAngle = -120f + (speedRatio * 120f);
+            float speedAngle = -(speedRatio * 240f);
             speedAiguille.localRotation = Quaternion.Euler(0f, 0f, speedAngle);
             speedAiguille.position = baseSpeedAiguilleWorldPosition;
         }
@@ -216,11 +217,14 @@ public class PlaneHUDUI : MonoBehaviour
             }
             
             // Rotation de l'aiguille selon le roll (vers la gauche ou la droite)
-            horizonAiguille.localRotation = Quaternion.Euler(0f, 0f, -displayedRoll);
+            // L'aiguille tourne dans le même sens que l'avion
+            horizonAiguille.localRotation = Quaternion.Euler(0f, 0f, displayedRoll);
             
             // Déplacement vertical selon le pitch (haut ou bas) à partir de la position du cadran
+            // Borner le pitch pour que l'aiguille ne dépasse pas le demi-rayon du cadran
+            float clampedPitch = Mathf.Clamp(displayedPitch, -maxPitchAngle, maxPitchAngle);
             Vector3 worldPos = baseAiguilleWorldPosition;
-            worldPos.y += -displayedPitch * pitchPixelsPerDegree; // pitch positif => aiguille descend
+            worldPos.y += -clampedPitch * pitchPixelsPerDegree; // pitch positif => aiguille descend
             horizonAiguille.position = worldPos;
         }
     }
