@@ -47,7 +47,7 @@ public class PlaneStartupPitchHold : MonoBehaviour
     [Tooltip("Nombre minimum de roues au sol pour capturer le pitch initial")] public int minGroundedWheels = 2;
 
     [Header("Debug")]
-    [Tooltip("Affichage debug GUI")] public bool showDebug = true;
+    [Tooltip("Affichage debug GUI")] public bool showDebug = false;
 
     private float startTime;
     private bool active;

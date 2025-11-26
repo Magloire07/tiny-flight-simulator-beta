@@ -80,6 +80,13 @@ public class CloudMaster : MonoBehaviour {
         material.SetTexture ("NoiseTex", noise.shapeTexture);
         material.SetTexture ("DetailNoiseTex", noise.detailTexture);
         material.SetTexture ("BlueNoise", blueNoise);
+        
+        // Pass skybox to shader
+        if (RenderSettings.skybox != null && RenderSettings.skybox.HasProperty("_Tex")) {
+            material.SetTexture("_Skybox", RenderSettings.skybox.GetTexture("_Tex"));
+        } else if (RenderSettings.skybox != null && RenderSettings.skybox.HasProperty("_MainTex")) {
+            material.SetTexture("_Skybox", RenderSettings.skybox.GetTexture("_MainTex"));
+        }
 
         // Weathermap
         var weatherMapGen = FindObjectOfType<WeatherMap> ();

@@ -58,6 +58,9 @@ Shader "Hidden/Clouds"
 
             sampler2D _MainTex;
             sampler2D _CameraDepthTexture;
+            
+            // Skybox support
+            samplerCUBE _Skybox;
 
             // Shape settings
             float4 params;
@@ -329,7 +332,16 @@ Shader "Hidden/Clouds"
                 }
 
                 // Add clouds to background
-                float3 backgroundCol = tex2D(_MainTex,i.uv);
+                // Use skybox instead of custom gradient for areas without scene geometry
+                float3 backgroundCol;
+                if (nonlin_depth > 0.9999) {
+                    // Sky - sample from skybox cubemap
+                    backgroundCol = texCUBE(_Skybox, rayDir).rgb;
+                } else {
+                    // Scene geometry - use rendered color
+                    backgroundCol = tex2D(_MainTex,i.uv);
+                }
+                
                 float3 cloudCol = lightEnergy * _LightColor0;
                 float3 col = backgroundCol * transmittance + cloudCol;
                 return float4(col,0);
