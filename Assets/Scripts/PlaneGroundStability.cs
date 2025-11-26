@@ -2,9 +2,8 @@ using UnityEngine;
 using MFlight.Demo;
 
 /// <summary>
-/// Maintient l'avion plaqué au sol (3 roues) jusqu'à la vitesse de décollage.
-/// Applique une force vers le bas et amortit le tangage/roulis pour éviter l'instabilité.
-/// Se désactive automatiquement quand la vitesse de décollage est atteinte.
+/// Stabilise l'avion au sol et maintient son tangage initial tant qu'il est proche du sol (simulation décollage).
+/// L'avion garde son angle de départ jusqu'à dépasser une hauteur définie, puis le contrôle complet est rendu au pilote.
 /// </summary>
 [DefaultExecutionOrder(50)]
 public class PlaneGroundStability : MonoBehaviour
@@ -15,53 +14,33 @@ public class PlaneGroundStability : MonoBehaviour
     public MFlight.Demo.Plane plane; // assigner l'avion; auto-récup si null
     public WheelCollider[] wheelColliders; // si vide, auto-récup dans enfants
 
-    [Header("Paramètres de Décollage")] 
-    [Tooltip("Utiliser la vitesse de décollage du Plane (takeoffMinSpeed). Si désactivé, utiliser customSpeed.")]
-    public bool usePlaneTakeoffSpeed = true;
-    [Tooltip("Vitesse de libération (m/s) si non liée au Plane")] public float customReleaseSpeed = 100f;
-    [Tooltip("Plage de transition (m/s) autour de la vitesse de libération pour adoucir le relâchement")] public float releaseFadeBandwidth = 8f;
+    [Header("Paramètres de Décollage (Basé sur Altitude)")] 
+    [Tooltip("Hauteur max (m) au-dessus du sol pour maintenir la stabilité. Au-delà, contrôle total rendu.")]
+    public float maxGroundProximityHeight = 2f;
+    [Tooltip("Plage de transition (m) pour adoucir le relâchement du contrôle")] public float releaseFadeHeightBand = 1f;
 
     [Header("Stabilité au Sol")]
-    [Tooltip("Multiplier par le poids (m*g) pour la force verticale. 1 = poids équivalent")]
-    public float holdDownWeightFactor = 1.0f;
-    [Tooltip("Force verticale supplémentaire minimale (Newtons), s'ajoute au facteur de poids")] public float minExtraHoldForce = 500f;
-    [Tooltip("Force supplémentaire appliquée vers le bas sur l'avant (Newtons)")] public float noseDownForce = 800f;
-    [Tooltip("Offset local pour la force de nez (point d'application)")] public Vector3 noseForceLocalOffset = new Vector3(0f, 0f, 2f);
-    [Tooltip("Angle de tangage max autorisé tant que pas libéré (degrés)")] public float maxPitchWhileHeld = 6f;
-    [Tooltip("Damping multiplicateur pour la vitesse angulaire locale (0-1)")] [Range(0f,1f)] public float angularDampingWhileHeld = 0.6f;
-    [Tooltip("Réduction du roulis (0-1) appliquée en plus du damping global")] [Range(0f,1f)] public float rollDampingExtra = 0.5f;
-    [Tooltip("Damping vertical linéaire (0-1) pour coller au sol")] [Range(0f,1f)] public float verticalVelocityDamping = 0.75f;
-    [Tooltip("Damping de lacet (Y) local (0-1)")] [Range(0f,1f)] public float yawDampingWhileHeld = 0.4f;
-    [Tooltip("Appliquer la force vers le bas répartie à chaque roue")] public bool distributeForcePerWheel = true;
-    [Tooltip("Afficher un label debug à l'écran")] public bool showDebug = false;
+    [Tooltip("Force de stabilisation sur les roues pour éviter oscillations")] public float wheelStabilizationForce = 300f;
+    [Tooltip("Damping du roulis (0-1) pour garder l'avion stable latéralement")] [Range(0f,1f)] public float rollDampingWhileGrounded = 0.4f;
+    [Tooltip("Damping du lacet (0-1) pour éviter rotation excessive au sol")] [Range(0f,1f)] public float yawDampingWhileGrounded = 0.3f;
 
-    [Header("Renforcement (Anti-Décollage Prématuré)")]
-    [Tooltip("Supprimer quasi totalement la portance aérodynamique tant que hold actif")] public bool suppressLiftWhileHeld = true;
-    [Tooltip("Facteur additionnel * poids appliqué vers le bas en plus du hold normal")] public float extraDownwardWeightFactor = 0.8f;
-    [Tooltip("Vitesse verticale ascendante max autorisée (m/s) tant que hold actif")] public float maxUpVelocityWhileHeld = 0.2f;
-    [Tooltip("Bloquer le pitch positif au-dessus de ce seuil (degrés) tant que hold actif")] public float clampPositivePitchDegrees = 2f;
-    [Tooltip("Appliquer couple instantané pour écraser pitch > clampPositivePitchDegrees")] public bool applyHardNoseClamp = true;
-    [Tooltip("Aligner activement le nez vers un pitch cible tant que hold actif")] public bool enforceTargetPitchWhileHeld = true;
-    [Tooltip("Pitch cible à maintenir (°) tant que hold actif")] public float targetPitchWhileHeldDeg = 0f;
-    [Tooltip("Couple par degré d'erreur pour aligner le pitch (Nm/deg)")] public float pitchAlignTorquePerDeg = 40f;
+    [Header("Maintien du Tangage Initial")]
+    [Tooltip("Maintenir le pitch initial de l'avion tant que proche du sol")] public bool lockInitialPitch = true;
+    [Tooltip("Couple par degré d'erreur pour maintenir le pitch initial (Nm/deg)")] public float pitchHoldTorquePerDeg = 50f;
+    [Tooltip("Couple max appliqué pour le maintien du pitch (Nm)")] public float maxPitchHoldTorque = 3000f;
 
-    [Header("Critères Roues au Sol")]
-    [Tooltip("Nombre minimum de roues au sol pour activer le maintien")] public int minGroundedWheels = 3;
-    [Tooltip("Longueur du raycast (fallback si WheelCollider non fiable)")] public float wheelRayLength = 1.0f;
+    [Header("Détection du Sol")]
+    [Tooltip("Nombre minimum de roues au sol pour considérer l'avion comme stable")] public int minGroundedWheels = 2;
+    [Tooltip("Longueur du raycast pour détecter le sol (m)")] public float groundRayLength = 5.0f;
     [Tooltip("LayerMask du sol (si 0 => tout)")] public LayerMask groundMask = 0;
-
-    [Header("Démarrage / Stabilisation Initiale")]
-    [Tooltip("Durée (s) de tolérance au démarrage (autorise 2 roues) et applique une force d'assise")] public float startupSettleTime = 0.6f;
-    [Tooltip("Facteur du poids appliqué vers le bas pendant la phase de settling")] public float startupSeatForceWeightFactor = 0.5f;
-
-    [Header("Robustesse / Debug")]
-    [Tooltip("Maintenir le hold tant que la vitesse < releaseSpeed même si moins de roues que minGroundedWheels (≥1)")] public bool relaxWheelRequirementAtLowSpeed = true;
-    [Tooltip("Afficher un tableau par roue")] public bool showPerWheelStatus = false;
+    [Tooltip("Afficher debug à l'écran")] public bool showDebug = true;
 
     private Rigidbody rb;
-    private bool isHeld;
-    private float settleTimer;
-    private string releaseReason = "Init";
+    private bool isStabilizing;
+    private float initialPitchAngle;
+    private bool initialPitchCaptured;
+    private float currentGroundHeight;
+    private string statusReason = "Init";
 
     void Awake()
     {
@@ -74,144 +53,117 @@ public class PlaneGroundStability : MonoBehaviour
             if (local != null && local.Length > 0) wheelColliders = local;
             else if (plane != null) wheelColliders = plane.GetComponentsInChildren<WheelCollider>();
         }
-        settleTimer = startupSettleTime;
+        initialPitchCaptured = false;
     }
 
     void FixedUpdate()
     {
         if (plane == null || rb == null) return;
 
-        float releaseSpeed = usePlaneTakeoffSpeed ? plane.takeoffMinSpeed : customReleaseSpeed;
-        int groundedCount = CountGroundedWheels();
-        bool criteriaGround = groundedCount >= minGroundedWheels;
-        bool criteriaSpeed = plane.Airspeed < releaseSpeed;
-
-        // Fenêtre de settling au démarrage: tolérer 2 roues et pousser l'avion à s'asseoir
-        if (settleTimer > 0f)
+        // Capturer le pitch initial au premier contact au sol
+        if (!initialPitchCaptured && CountGroundedWheels() >= minGroundedWheels)
         {
-            settleTimer -= Time.fixedDeltaTime;
-            if (!criteriaGround && groundedCount >= Mathf.Max(1, minGroundedWheels - 1))
-            {
-                criteriaGround = true; // tolérance temporaire
-            }
-            // appliquer une force d'assise
-            float weight = rb.mass * Physics.gravity.magnitude;
-            rb.AddForce(Vector3.down * (weight * startupSeatForceWeightFactor), ForceMode.Force);
+            initialPitchAngle = GetCurrentPitchAngle();
+            initialPitchCaptured = true;
+            statusReason = "Initial Pitch Captured: " + initialPitchAngle.ToString("F1") + "°";
         }
 
-        // Relax wheel requirement if opted and still below speed
-        if (relaxWheelRequirementAtLowSpeed && !criteriaGround && criteriaSpeed && groundedCount >= 1 && settleTimer <= 0f)
-        {
-            criteriaGround = true;
-        }
+        // Calculer hauteur au-dessus du sol
+        currentGroundHeight = GetHeightAboveGround();
 
-        // Facteur de fade (1 = maintien fort, 0 = relâché)
+        // Déterminer si la stabilisation est active (basée sur hauteur)
+        float fadeStart = maxGroundProximityHeight;
+        float fadeEnd = maxGroundProximityHeight + releaseFadeHeightBand;
         float fade = 0f;
-        if (criteriaGround)
+        
+        if (currentGroundHeight < fadeStart)
         {
-            float a = releaseSpeed - releaseFadeBandwidth; // début de fade
-            float b = releaseSpeed; // fin de fade
-            fade = Mathf.Clamp01((b - plane.Airspeed) / Mathf.Max(0.1f, (b - a)));
+            fade = 1f; // Stabilisation complète
+            statusReason = "Ground Proximity Active (h=" + currentGroundHeight.ToString("F1") + "m)";
         }
-        bool holdPrev = isHeld;
-        isHeld = criteriaGround && fade > 0f;
-        if (!isHeld)
+        else if (currentGroundHeight < fadeEnd)
         {
-            if (!criteriaGround && criteriaSpeed)
-                releaseReason = $"WheelCount<{minGroundedWheels} ({groundedCount})";
-            else if (!criteriaSpeed)
-                releaseReason = $"Speed>=Release ({plane.Airspeed:F1})";
-            else if (fade <= 0f)
-                releaseReason = "Fade=0";
+            // Transition progressive
+            fade = 1f - ((currentGroundHeight - fadeStart) / releaseFadeHeightBand);
+            statusReason = "Releasing (fade=" + (fade * 100f).ToString("F0") + "%)";
         }
-        else if (!holdPrev && isHeld)
+        else
         {
-            releaseReason = "Holding";
+            fade = 0f;
+            statusReason = "Released - Full Control (h=" + currentGroundHeight.ToString("F1") + "m)";
         }
 
-        if (isHeld)
+        isStabilizing = fade > 0f;
+
+        if (isStabilizing && initialPitchCaptured)
         {
-            // Calculer force de maintien basée sur le poids
-            float weight = rb.mass * Physics.gravity.magnitude;
-            float holdForceTotal = weight * holdDownWeightFactor + minExtraHoldForce;
-            holdForceTotal *= fade; // appliquer le fade proche de la vitesse de libération
-
-            // Portance supprimée: appliquer une force supplémentaire pour contre-balancer toute montée
-            if (suppressLiftWhileHeld)
+            // Maintenir le pitch initial
+            if (lockInitialPitch)
             {
-                holdForceTotal += weight * extraDownwardWeightFactor * fade;
+                float currentPitch = GetCurrentPitchAngle();
+                float pitchError = initialPitchAngle - currentPitch;
+                
+                // Appliquer un couple correcteur proportionnel à l'erreur
+                float torqueMag = Mathf.Clamp(Mathf.Abs(pitchError) * pitchHoldTorquePerDeg, 0f, maxPitchHoldTorque);
+                torqueMag *= fade; // Appliquer le facteur de transition
+                
+                float torqueSign = Mathf.Sign(pitchError);
+                Vector3 pitchTorque = rb.transform.right * (torqueSign * torqueMag);
+                rb.AddTorque(pitchTorque, ForceMode.Force);
             }
 
-            if (distributeForcePerWheel && groundedCount > 0)
-            {
-                float perWheel = holdForceTotal / groundedCount;
-                foreach (var wc in wheelColliders)
-                {
-                    if (wc == null) continue;
-                    if (!WheelIsGrounded(wc)) continue;
-                    rb.AddForceAtPosition(Vector3.down * perWheel, wc.transform.position, ForceMode.Force);
-                }
-            }
-            else
-            {
-                // Force vers le bas au centre
-                rb.AddForce(Vector3.down * holdForceTotal, ForceMode.Force);
-            }
-
-            // Force de nez pour empêcher cabrage prématuré
-            Vector3 noseWorldPos = rb.transform.TransformPoint(noseForceLocalOffset);
-            rb.AddForceAtPosition(Vector3.down * (noseDownForce * fade), noseWorldPos, ForceMode.Force);
-
-            // Limiter tangage: si angle dépasse maxPitchWhileHeld, appliquer contre-couple
-            float pitchAngle = Vector3.SignedAngle(Vector3.ProjectOnPlane(rb.transform.forward, Vector3.up), rb.transform.forward, rb.transform.right);
-            if (pitchAngle > maxPitchWhileHeld)
-            {
-                // Couple négatif autour de l'axe X pour abaisser le nez
-                rb.AddTorque(-rb.transform.right * (pitchAngle - maxPitchWhileHeld) * 50f * fade, ForceMode.Force);
-            }
-
-            // Alignement actif vers pitch cible (ex: 0°) pour éviter nez vers le haut
-            if (enforceTargetPitchWhileHeld)
-            {
-                float alignError = pitchAngle - targetPitchWhileHeldDeg; // positif => trop haut
-                float alignTorqueMag = Mathf.Min(Mathf.Abs(alignError) * pitchAlignTorquePerDeg, 2000f) * fade;
-                // appliquer seulement si erreur significative (>0.2°)
-                if (Mathf.Abs(alignError) > 0.2f)
-                {
-                    rb.AddTorque(-rb.transform.right * alignError / Mathf.Max(0.01f, Mathf.Abs(alignError)) * alignTorqueMag, ForceMode.Force);
-                }
-            }
-
-            // Clamp dur sur pitch positif trop élevé (empêche cabrage pour générer portance)
-            if (applyHardNoseClamp && pitchAngle > clampPositivePitchDegrees)
-            {
-                rb.AddTorque(-rb.transform.right * (pitchAngle - clampPositivePitchDegrees) * 120f * fade, ForceMode.Force);
-            }
-
-            // Damping angulaire local (appliqué sur X/Z et un peu Y) pour réduire oscillations
+            // Damping du roulis et lacet pour stabilité latérale
             Vector3 localAngular = rb.transform.InverseTransformDirection(rb.angularVelocity);
-            localAngular.x *= Mathf.Clamp01(1f - angularDampingWhileHeld * fade);
-            localAngular.z *= Mathf.Clamp01(1f - (angularDampingWhileHeld + rollDampingExtra * (1f - angularDampingWhileHeld)) * fade);
-            localAngular.y *= Mathf.Clamp01(1f - yawDampingWhileHeld * fade);
+            localAngular.z *= Mathf.Clamp01(1f - rollDampingWhileGrounded * fade); // Roll
+            localAngular.y *= Mathf.Clamp01(1f - yawDampingWhileGrounded * fade); // Yaw
             rb.angularVelocity = rb.transform.TransformDirection(localAngular);
 
-            // Damping vertical linéaire pour bien coller au sol
-            Vector3 v = rb.velocity;
-            float newVy = Mathf.Lerp(v.y, 0f, verticalVelocityDamping * fade);
-            // Empêcher montée (si v.y > max autorisé)
-            if (newVy > maxUpVelocityWhileHeld) newVy = maxUpVelocityWhileHeld * 0.5f; // réduire encore
-            rb.velocity = new Vector3(v.x, newVy, v.z);
+            // Force de stabilisation légère sur les roues pour éviter rebonds
+            int groundedCount = CountGroundedWheels();
+            if (groundedCount > 0 && wheelStabilizationForce > 0f)
+            {
+                float forcePerWheel = (wheelStabilizationForce * fade) / groundedCount;
+                foreach (var wc in wheelColliders)
+                {
+                    if (wc == null || !WheelIsGrounded(wc)) continue;
+                    rb.AddForceAtPosition(Vector3.down * forcePerWheel, wc.transform.position, ForceMode.Force);
+                }
+            }
         }
+    }
+
+    float GetCurrentPitchAngle()
+    {
+        // Calcul de l'angle de tangage par rapport à l'horizon
+        Vector3 flatFwd = Vector3.ProjectOnPlane(rb.transform.forward, Vector3.up);
+        if (flatFwd.sqrMagnitude < 1e-6f) flatFwd = rb.transform.forward;
+        return Vector3.SignedAngle(flatFwd, rb.transform.forward, rb.transform.right);
+    }
+
+    float GetHeightAboveGround()
+    {
+        // Raycast depuis le centre de l'avion vers le bas
+        Ray ray = new Ray(rb.transform.position, Vector3.down);
+        RaycastHit hit;
+        int mask = groundMask.value == 0 ? ~0 : groundMask.value;
+        
+        if (Physics.Raycast(ray, out hit, groundRayLength, mask))
+        {
+            return hit.distance;
+        }
+        
+        // Si pas de hit, considérer comme très haut
+        return groundRayLength;
     }
 
     int CountGroundedWheels()
     {
         int count = 0;
+        if (wheelColliders == null) return 0;
         foreach (var wc in wheelColliders)
         {
             if (wc == null) continue;
-            bool grounded = WheelIsGrounded(wc);
-            if (grounded) count++;
+            if (WheelIsGrounded(wc)) count++;
         }
         return count;
     }
@@ -220,14 +172,20 @@ public class PlaneGroundStability : MonoBehaviour
     {
         if (wc.isGrounded) return true;
         WheelHit hit;
-        if (wc.GetGroundHit(out hit)) return true;
-        // Fallback raycast du centre de la roue
-        Ray ray = new Ray(wc.transform.position, -wc.transform.up);
-        return Physics.Raycast(ray, wheelRayLength, groundMask.value == 0 ? ~0 : groundMask);
+        return wc.GetGroundHit(out hit);
     }
 
     void OnGUI()
     {
-        return;
+        if (!showDebug || DisableAllOnScreenDebug) return;
+        
+        GUI.Label(new Rect(10, 60, 500, 25), $"Ground Stability: {(isStabilizing ? "ACTIVE" : "INACTIVE")} - {statusReason}");
+        if (initialPitchCaptured)
+        {
+            float currentPitch = GetCurrentPitchAngle();
+            GUI.Label(new Rect(10, 85, 500, 25), 
+                $"Pitch: Current={currentPitch:F1}° Target={initialPitchAngle:F1}° Height={currentGroundHeight:F1}m");
+        }
+        GUI.Label(new Rect(10, 110, 500, 25), $"Wheels Grounded: {CountGroundedWheels()}/{(wheelColliders != null ? wheelColliders.Length : 0)}");
     }
 }

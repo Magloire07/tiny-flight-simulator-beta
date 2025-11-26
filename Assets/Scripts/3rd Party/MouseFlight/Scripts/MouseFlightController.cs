@@ -31,6 +31,12 @@ namespace MFlight
     private bool allowRuntimeRealign = true;
     [SerializeField] [Tooltip("Key used to realign the camera rig to the aircraft when Allow Runtime Realign is enabled.")]
     private KeyCode realignKey = KeyCode.R;
+    [SerializeField] [Tooltip("Auto-realign camera when using keyboard directional controls (arrows, QZSD)")]
+    private bool autoRealignOnKeyboardInput = true;
+    [SerializeField] [Tooltip("Delay (seconds) after keyboard input before auto-realign triggers")]
+    private float autoRealignDelay = 0.5f;
+    [SerializeField] [Tooltip("Speed of smooth auto-realignment (higher = faster)")]
+    private float autoRealignSpeed = 3f;
         [SerializeField] [Tooltip("Follow aircraft using fixed update loop")]
         private bool useFixed = true;
 
@@ -47,10 +53,10 @@ namespace MFlight
         [SerializeField] [Tooltip("How far the boresight and mouse flight are from the aircraft")]
         private bool showDebugInfo = false;
 
-        private Vector3 frozenDirection = Vector3.forward;
-        private bool isMouseAimFrozen = false;
-
-        /// <summary>
+    private Vector3 frozenDirection = Vector3.forward;
+    private bool isMouseAimFrozen = false;
+    private float lastKeyboardInputTime = -999f;
+    private bool isAutoRealigning = false;        /// <summary>
         /// Get a point along the aircraft's boresight projected out to aimDistance meters.
         /// Useful for drawing a crosshair to aim fixed forward guns with, or to indicate what
         /// direction the aircraft is pointed.
@@ -127,10 +133,49 @@ namespace MFlight
 
             RotateRig();
 
+            // Détecter l'utilisation des touches de contrôle directionnel
+            if (autoRealignOnKeyboardInput)
+            {
+                bool keyboardInput = Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow) ||
+                                    Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow) ||
+                                    Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D) ||
+                                    Input.GetKey(KeyCode.Z) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S);
+                
+                if (keyboardInput)
+                {
+                    lastKeyboardInputTime = Time.time;
+                    isAutoRealigning = false; // Annuler le réalignement en cours si on utilise les touches
+                }
+                
+                // Commencer le réalignement après le délai
+                if (!isAutoRealigning && Time.time - lastKeyboardInputTime >= autoRealignDelay && 
+                    Time.time - lastKeyboardInputTime < autoRealignDelay + 2f)
+                {
+                    isAutoRealigning = true;
+                }
+                
+                // Appliquer le réalignement progressif
+                if (isAutoRealigning && aircraft != null && mouseAim != null && cameraRig != null)
+                {
+                    // Aligner progressivement mouseAim vers la direction de l'avion
+                    Vector3 targetDirection = aircraft.forward;
+                    Vector3 currentDirection = mouseAim.forward;
+                    
+                    mouseAim.forward = Vector3.Slerp(currentDirection, targetDirection, autoRealignSpeed * Time.deltaTime);
+                    
+                    // Arrêter le réalignement quand suffisamment proche
+                    if (Vector3.Angle(mouseAim.forward, aircraft.forward) < 1f)
+                    {
+                        isAutoRealigning = false;
+                    }
+                }
+            }
+
             // Runtime realign: allow player to realign the camera rig to the aircraft while flying
             if (allowRuntimeRealign && Input.GetKeyDown(realignKey) && aircraft != null)
             {
                 RealignToAircraft();
+                isAutoRealigning = false;
             }
         }
 

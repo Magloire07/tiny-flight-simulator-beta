@@ -180,11 +180,15 @@ namespace MFlight.Demo
                 float arrowUp = Input.GetKey(KeyCode.UpArrow) ? 1f : 0f;
                 float arrowDown = Input.GetKey(KeyCode.DownArrow) ? 1f : 0f;
 
-                // Also support WASD for convenience
-                float keyA = Input.GetKey(KeyCode.A) ? 1f : 0f;
-                float keyD = Input.GetKey(KeyCode.D) ? 1f : 0f;
-                float keyW = Input.GetKey(KeyCode.W) ? 1f : 0f;
-                float keyS = Input.GetKey(KeyCode.S) ? 1f : 0f;
+                // Support ZQSD (AZERTY) - Détecter toutes les touches possibles
+                // Sur AZERTY: touche physique A peut être KeyCode.Q ou KeyCode.A selon config Unity
+                float keyLeftYaw = 0f;
+                if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.A)) keyLeftYaw = 1f; // Gauche (A physique)
+                float keyRightYaw = Input.GetKey(KeyCode.D) ? 1f : 0f; // Droite (D physique)
+                
+                float keyZ = Input.GetKey(KeyCode.Z) ? 1f : 0f; // Touche physique W (AZERTY)
+                float keyW = Input.GetKey(KeyCode.W) ? 1f : 0f; // Alternative
+                float keyS = Input.GetKey(KeyCode.S) ? 1f : 0f; // Touche physique S
 
                 // Roll from Left/Right arrows (bank the wings)
                 float rollKeys = (arrowRight - arrowLeft);
@@ -196,14 +200,14 @@ namespace MFlight.Demo
                 float pitchFromMouse = -mouseY * mousePitchSensitivity; // inverted so positive mouseY (moving up) pitches down
                 pitch = Mathf.Clamp(pitchFromKeys + pitchFromMouse, -1f, 1f);
 
-                // Yaw from A/D (rudder) plus optional mouse X
-                float yawKeys = (keyD - keyA);
+                // Yaw: A/Q (gauche) / D (droite)
+                float yawKeys = (keyRightYaw - keyLeftYaw);
                 float yawFromKeys = yawKeys * keyboardYawSensitivity;
                 float yawFromMouse = mouseX * mouseYawSensitivity;
                 yaw = Mathf.Clamp(yawFromKeys + yawFromMouse, -1f, 1f);
 
                 // Symmetric aileron deflection from vertical keys (optional/visual)
-                aileronSymmetric = Mathf.Clamp((arrowUp - arrowDown) + (keyW - keyS), -1f, 1f);
+                aileronSymmetric = Mathf.Clamp((arrowUp - arrowDown) + (keyZ - keyS) + (keyW - keyS), -1f, 1f);
 
                 // Capture raw commands BEFORE stabilization modifies them
                 rawPitchCommand = pitch;
