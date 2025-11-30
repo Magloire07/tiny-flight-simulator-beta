@@ -40,6 +40,24 @@ public class CameraViewSwitcher : MonoBehaviour
     [Range(30f, 120f)]
     public float cockpitFOV = 30f;
     
+    [Header("Contrôle Vue Cockpit")]
+    [Tooltip("Permettre de regarder autour avec la souris en vue cockpit")]
+    public bool enableCockpitFreeLook = true;
+    
+    [Tooltip("Sensibilité de rotation de la caméra cockpit")]
+    public float cockpitLookSensitivity = 2f;
+    
+    [Tooltip("Angle maximum de rotation horizontale (gauche/droite)")]
+    [Range(0f, 180f)]
+    public float maxYawAngle = 90f;
+    
+    [Tooltip("Angle maximum de rotation verticale (haut/bas)")]
+    [Range(0f, 90f)]
+    public float maxPitchAngle = 60f;
+    
+    [Tooltip("Touche pour réinitialiser la vue (regarder devant)")]
+    public KeyCode recenterViewKey = KeyCode.C;
+    
     [Header("Transition")]
     [Tooltip("Vitesse de transition entre les vues (0 = instantané)")]
     [Range(0f, 20f)]
@@ -58,6 +76,8 @@ public class CameraViewSwitcher : MonoBehaviour
     private Quaternion targetRotation;
     private bool useMouseFlightInExternalView = true;
     private float externalViewFOV; // Sauvegarde du FOV de la vue externe
+    private float cockpitYaw = 0f; // Rotation horizontale de la vue cockpit
+    private float cockpitPitch = 0f; // Rotation verticale de la vue cockpit
     
     void Start()
     {
@@ -143,12 +163,43 @@ public class CameraViewSwitcher : MonoBehaviour
             Debug.Log("CameraViewSwitcher: Touche " + switchViewKey + " appuyée!");
             ToggleView();
         }
+        
+        // Gestion du free look en vue cockpit
+        if (isCockpitView && enableCockpitFreeLook)
+        {
+            HandleCockpitFreeLook();
+        }
     }
     
     void LateUpdate()
     {
         // Mise à jour de la position/rotation de la caméra APRÈS le physics update
         UpdateCameraTransform();
+    }
+    
+    /// <summary>
+    /// Gère le free look avec la souris en vue cockpit
+    /// </summary>
+    void HandleCockpitFreeLook()
+    {
+        // Récupérer le mouvement de la souris
+        float mouseX = Input.GetAxis("Mouse X") * cockpitLookSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * cockpitLookSensitivity;
+        
+        // Appliquer la rotation
+        cockpitYaw += mouseX;
+        cockpitPitch -= mouseY; // Inverser pour que haut = regarder haut
+        
+        // Limiter les angles
+        cockpitYaw = Mathf.Clamp(cockpitYaw, -maxYawAngle, maxYawAngle);
+        cockpitPitch = Mathf.Clamp(cockpitPitch, -maxPitchAngle, maxPitchAngle);
+        
+        // Réinitialiser la vue avec la touche C
+        if (Input.GetKeyDown(recenterViewKey))
+        {
+            cockpitYaw = 0f;
+            cockpitPitch = 0f;
+        }
     }
     
     /// <summary>
@@ -175,6 +226,10 @@ public class CameraViewSwitcher : MonoBehaviour
     /// </summary>
     void SetCockpitView(bool instant)
     {
+        // Réinitialiser le free look
+        cockpitYaw = 0f;
+        cockpitPitch = 0f;
+        
         // Utiliser l'offset relatif à l'avion (suit toujours le Rigidbody)
         if (useOffsetOnly || pilotSeatTransform == null)
         {
@@ -255,13 +310,19 @@ public class CameraViewSwitcher : MonoBehaviour
             if (useOffsetOnly || pilotSeatTransform == null)
             {
                 targetPosition = aircraft.TransformPoint(cockpitViewOffset);
-                targetRotation = aircraft.rotation * Quaternion.Euler(cockpitViewRotation);
+                // Appliquer la rotation de base + le free look
+                Quaternion baseRotation = aircraft.rotation * Quaternion.Euler(cockpitViewRotation);
+                Quaternion freeLookRotation = Quaternion.Euler(cockpitPitch, cockpitYaw, 0f);
+                targetRotation = baseRotation * freeLookRotation;
             }
             else
             {
                 // Utiliser le siège pilote + offset
                 targetPosition = pilotSeatTransform.position + pilotSeatTransform.TransformDirection(cockpitViewOffset);
-                targetRotation = pilotSeatTransform.rotation * Quaternion.Euler(cockpitViewRotation);
+                // Appliquer la rotation de base + le free look
+                Quaternion baseRotation = pilotSeatTransform.rotation * Quaternion.Euler(cockpitViewRotation);
+                Quaternion freeLookRotation = Quaternion.Euler(cockpitPitch, cockpitYaw, 0f);
+                targetRotation = baseRotation * freeLookRotation;
             }
             
             // Application directe sans Lerp pour éviter l'effet d'inertie
