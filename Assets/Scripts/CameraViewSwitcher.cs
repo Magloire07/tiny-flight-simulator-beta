@@ -24,14 +24,21 @@ public class CameraViewSwitcher : MonoBehaviour
     public float externalViewDistance = 8f;
     
     [Header("Vue Cockpit")]
-    [Tooltip("Transform du siège pilote (si null, cherche automatiquement 'pilot' ou 'seat' dans l'avion)")]
+    [Tooltip("Utiliser directement l'offset par rapport à l'avion (ignore la recherche de siège)")]
+    public bool useOffsetOnly = true;
+    
+    [Tooltip("Transform du siège pilote (utilisé seulement si useOffsetOnly = false)")]
     public Transform pilotSeatTransform;
     
-    [Tooltip("Position de la caméra en vue cockpit (relative à l'avion si pas de siège trouvé)")]
-    public Vector3 cockpitViewOffset = new Vector3(0f, 0.77f, 0.80f);
+    [Tooltip("Position de la caméra en vue cockpit (relative à l'avion)")]
+    public Vector3 cockpitViewOffset = new Vector3(0.03f, 0.41f, 0.8f);
     
     [Tooltip("Rotation de la caméra en vue cockpit (Euler angles)")]
-    public Vector3 cockpitViewRotation = new Vector3(90f, 0f, 0f);
+    public Vector3 cockpitViewRotation = new Vector3(3f, -1.13f, 0f);
+    
+    [Tooltip("Field of View (FOV) en vue cockpit")]
+    [Range(30f, 120f)]
+    public float cockpitFOV = 30f;
     
     [Header("Transition")]
     [Tooltip("Vitesse de transition entre les vues (0 = instantané)")]
@@ -50,6 +57,7 @@ public class CameraViewSwitcher : MonoBehaviour
     private Vector3 targetPosition;
     private Quaternion targetRotation;
     private bool useMouseFlightInExternalView = true;
+    private float externalViewFOV; // Sauvegarde du FOV de la vue externe
     
     void Start()
     {
@@ -68,16 +76,15 @@ public class CameraViewSwitcher : MonoBehaviour
             return;
         }
         
-        // Chercher le siège pilote dans l'avion si non assigné
-        if (pilotSeatTransform == null)
+        // Chercher le siège pilote dans l'avion si non assigné ET si useOffsetOnly est false
+        if (!useOffsetOnly && pilotSeatTransform == null)
         {
-            // Chercher un Transform nommé "pilot", "seat", "cockpit", etc.
+            // Chercher un Transform nommé "pilot", "seat", "cockpit" (mais pas "camera" pour éviter confusion)
             Transform[] children = aircraft.GetComponentsInChildren<Transform>();
             foreach (Transform child in children)
             {
                 string nameLower = child.name.ToLower();
-                if (nameLower.Contains("pilot") || nameLower.Contains("seat") || 
-                    nameLower.Contains("cockpit") || nameLower.Contains("camera"))
+                if (nameLower.Contains("pilot") || nameLower.Contains("seat") || nameLower.Contains("cockpit"))
                 {
                     pilotSeatTransform = child;
                     Debug.Log("CameraViewSwitcher: Siège pilote trouvé automatiquement: " + child.name);
@@ -87,10 +94,14 @@ public class CameraViewSwitcher : MonoBehaviour
             
             if (pilotSeatTransform == null)
             {
-                Debug.LogWarning("CameraViewSwitcher: Aucun siège pilote trouvé. Utilisation de cockpitViewOffset.");
+                Debug.LogWarning("CameraViewSwitcher: Aucun siège pilote trouvé. Utilisation de cockpitViewOffset par rapport à l'avion.");
             }
         }
-        else
+        else if (useOffsetOnly)
+        {
+            Debug.Log("CameraViewSwitcher: Mode Offset Only activé - utilisation de cockpitViewOffset par rapport à l'avion.");
+        }
+        else if (pilotSeatTransform != null)
         {
             Debug.Log("CameraViewSwitcher: Siège pilote assigné: " + pilotSeatTransform.name);
         }
@@ -102,6 +113,13 @@ public class CameraViewSwitcher : MonoBehaviour
             {
                 Debug.Log("CameraViewSwitcher: MouseFlightController trouvé: " + mouseFlightController.name);
             }
+        }
+        
+        // Sauvegarder le FOV initial de la vue externe
+        if (viewCamera != null)
+        {
+            externalViewFOV = viewCamera.fieldOfView;
+            Debug.Log("CameraViewSwitcher: FOV vue externe sauvegardé: " + externalViewFOV);
         }
         
         // Initialiser avec la vue actuelle
@@ -125,8 +143,11 @@ public class CameraViewSwitcher : MonoBehaviour
             Debug.Log("CameraViewSwitcher: Touche " + switchViewKey + " appuyée!");
             ToggleView();
         }
-        
-        // Mise à jour de la position/rotation de la caméra
+    }
+    
+    void LateUpdate()
+    {
+        // Mise à jour de la position/rotation de la caméra APRÈS le physics update
         UpdateCameraTransform();
     }
     
@@ -154,19 +175,19 @@ public class CameraViewSwitcher : MonoBehaviour
     /// </summary>
     void SetCockpitView(bool instant)
     {
-        // Si un siège pilote existe, utiliser sa position + offset
-        if (pilotSeatTransform != null)
+        // Utiliser l'offset relatif à l'avion (suit toujours le Rigidbody)
+        if (useOffsetOnly || pilotSeatTransform == null)
         {
-            targetPosition = pilotSeatTransform.position + pilotSeatTransform.TransformDirection(cockpitViewOffset);
-            targetRotation = pilotSeatTransform.rotation * Quaternion.Euler(cockpitViewRotation);
-            Debug.Log("CameraViewSwitcher: Position cockpit depuis siège pilote + offset: " + targetPosition);
+            targetPosition = aircraft.TransformPoint(cockpitViewOffset);
+            targetRotation = aircraft.rotation * Quaternion.Euler(cockpitViewRotation);
+            Debug.Log("CameraViewSwitcher: Position cockpit depuis offset (suit l'avion): " + cockpitViewOffset);
         }
         else
         {
-            // Sinon, utiliser l'offset relatif à l'avion
-            targetPosition = aircraft.TransformPoint(cockpitViewOffset);
-            targetRotation = aircraft.rotation * Quaternion.Euler(cockpitViewRotation);
-            Debug.Log("CameraViewSwitcher: Position cockpit depuis offset: " + targetPosition);
+            // Utiliser le siège pilote + offset
+            targetPosition = pilotSeatTransform.position + pilotSeatTransform.TransformDirection(cockpitViewOffset);
+            targetRotation = pilotSeatTransform.rotation * Quaternion.Euler(cockpitViewRotation);
+            Debug.Log("CameraViewSwitcher: Position cockpit depuis siège pilote + offset: " + targetPosition);
         }
         
         // Désactiver MouseFlightController en vue cockpit
@@ -174,6 +195,12 @@ public class CameraViewSwitcher : MonoBehaviour
         {
             mouseFlightController.enabled = false;
             Debug.Log("CameraViewSwitcher: MouseFlightController désactivé");
+        }
+        
+        // Appliquer le FOV cockpit
+        if (viewCamera != null)
+        {
+            viewCamera.fieldOfView = cockpitFOV;
         }
         
         if (instant && viewCamera != null)
@@ -192,6 +219,12 @@ public class CameraViewSwitcher : MonoBehaviour
         if (mouseFlightController != null)
         {
             mouseFlightController.enabled = true;
+        }
+        
+        // Restaurer le FOV de la vue externe
+        if (viewCamera != null)
+        {
+            viewCamera.fieldOfView = externalViewFOV;
         }
         
         // Si MouseFlightController gère la caméra, ne rien faire
@@ -218,28 +251,25 @@ public class CameraViewSwitcher : MonoBehaviour
         
         if (isCockpitView)
         {
-            // Vue cockpit: la caméra suit rigidement l'avion ou le siège
-            if (pilotSeatTransform != null)
-            {
-                targetPosition = pilotSeatTransform.position + pilotSeatTransform.TransformDirection(cockpitViewOffset);
-                targetRotation = pilotSeatTransform.rotation * Quaternion.Euler(cockpitViewRotation);
-            }
-            else
+            // Vue cockpit: la caméra suit rigidement l'avion (pas d'interpolation pour éviter décalage)
+            if (useOffsetOnly || pilotSeatTransform == null)
             {
                 targetPosition = aircraft.TransformPoint(cockpitViewOffset);
                 targetRotation = aircraft.rotation * Quaternion.Euler(cockpitViewRotation);
             }
-            
-            if (transitionSpeed > 0f)
-            {
-                viewCamera.transform.position = Vector3.Lerp(viewCamera.transform.position, targetPosition, Time.deltaTime * transitionSpeed);
-                viewCamera.transform.rotation = Quaternion.Slerp(viewCamera.transform.rotation, targetRotation, Time.deltaTime * transitionSpeed);
-            }
             else
             {
-                viewCamera.transform.position = targetPosition;
-                viewCamera.transform.rotation = targetRotation;
+                // Utiliser le siège pilote + offset
+                targetPosition = pilotSeatTransform.position + pilotSeatTransform.TransformDirection(cockpitViewOffset);
+                targetRotation = pilotSeatTransform.rotation * Quaternion.Euler(cockpitViewRotation);
             }
+            
+            // Application directe sans Lerp pour éviter l'effet d'inertie
+            viewCamera.transform.position = targetPosition;
+            viewCamera.transform.rotation = targetRotation;
+            
+            // Maintenir le FOV cockpit
+            viewCamera.fieldOfView = cockpitFOV;
         }
         else
         {
