@@ -71,6 +71,9 @@ public class CameraViewSwitcher : MonoBehaviour
     [Tooltip("Vue actuelle (false = extérieure, true = cockpit)")]
     public bool isCockpitView = false;
     
+    [Tooltip("Vue par défaut au démarrage (false = extérieure, true = cockpit)")]
+    public bool startInCockpitView = false;
+    
     // Variables internes
     private Vector3 targetPosition;
     private Quaternion targetRotation;
@@ -142,6 +145,9 @@ public class CameraViewSwitcher : MonoBehaviour
             Debug.Log("CameraViewSwitcher: FOV vue externe sauvegardé: " + externalViewFOV);
         }
         
+        // Appliquer la vue par défaut au démarrage
+        isCockpitView = startInCockpitView;
+        
         // Initialiser avec la vue actuelle
         if (isCockpitView)
         {
@@ -152,7 +158,7 @@ public class CameraViewSwitcher : MonoBehaviour
             SetExternalView(true);
         }
         
-        Debug.Log("CameraViewSwitcher: Initialisation terminée. Appuyez sur " + switchViewKey + " pour changer de vue.");
+        Debug.Log("CameraViewSwitcher: Initialisation terminée. Vue par défaut: " + (isCockpitView ? "Cockpit" : "Extérieure") + ". Appuyez sur " + switchViewKey + " pour changer de vue.");
     }
     
     void Update()
@@ -205,7 +211,7 @@ public class CameraViewSwitcher : MonoBehaviour
     /// <summary>
     /// Bascule entre vue cockpit et vue extérieure
     /// </summary>
-    void ToggleView()
+    public void ToggleView()
     {
         isCockpitView = !isCockpitView;
         
