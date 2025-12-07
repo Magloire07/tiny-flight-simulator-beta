@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Contrôle le menu de réglages du jeu (météo, heure, vue caméra)
@@ -63,6 +64,10 @@ public class GameMenuController : MonoBehaviour
     [Tooltip("Référence au InputModeController")]
     public InputModeController inputModeController;
     
+    [Header("Menu Principal")]
+    [Tooltip("Bouton pour retourner au menu principal")]
+    public Button returnToMainMenuButton;
+    
     [Header("Réglages")]
     [Tooltip("Désactiver le contrôle de l'avion quand le menu est ouvert")]
     public bool disableFlightControlsWhenMenuOpen = true;
@@ -123,13 +128,18 @@ public class GameMenuController : MonoBehaviour
         
         if (toggleViewButton != null)
         {
-            toggleViewButton.onClick.AddListener(OnToggleViewClicked);
-            UpdateViewButtonText();
-        }
-        
         if (toggleInputButton != null)
         {
             toggleInputButton.onClick.AddListener(OnToggleInputClicked);
+            UpdateInputButtonText();
+        }
+        
+        if (returnToMainMenuButton != null)
+        {
+            returnToMainMenuButton.onClick.AddListener(ReturnToMainMenu);
+        }
+        
+        // Ajouter le listener pour le bouton menuOnToggleInputClicked);
             UpdateInputButtonText();
         }
         
@@ -353,12 +363,19 @@ public class GameMenuController : MonoBehaviour
     /// <summary>
     /// Appelé quand le bouton vue est cliqué
     /// </summary>
-    void OnToggleViewClicked()
+    public void OnToggleViewClicked()
     {
+        Debug.Log("OnToggleViewClicked appelé!");
+        
         if (cameraViewSwitcher != null)
         {
+            Debug.Log("CameraViewSwitcher trouvé, appel de ToggleView()");
             cameraViewSwitcher.ToggleView();
             UpdateViewButtonText();
+        }
+        else
+        {
+            Debug.LogWarning("CameraViewSwitcher est null! Vérifiez la référence dans l'Inspector.");
         }
     }
     
@@ -410,7 +427,7 @@ public class GameMenuController : MonoBehaviour
     /// <summary>
     /// Appelé quand le bouton contrôle est cliqué
     /// </summary>
-    void OnToggleInputClicked()
+    public void OnToggleInputClicked()
     {
         if (inputModeController != null)
         {
@@ -428,5 +445,15 @@ public class GameMenuController : MonoBehaviour
         {
             toggleInputButtonText.text = "Contrôle: " + inputModeController.GetCurrentModeName();
         }
+    }
+    
+    /// <summary>
+    /// Retourne au menu principal
+    /// </summary>
+    public void ReturnToMainMenu()
+    {
+        Debug.Log("Retour au menu principal...");
+        Time.timeScale = 1f; // S'assurer que le temps n'est pas en pause
+        SceneManager.LoadScene("MainMenu");
     }
 }
