@@ -21,19 +21,19 @@ public class AtmosphericTurbulence : MonoBehaviour
     [Header("Turbulences")]
     [Tooltip("Intensité de base des turbulences (multiplicateur)")]
     [Range(0f, 10f)]
-    public float baseTurbulenceIntensity = 1f;
+    public float baseTurbulenceIntensity = 3f;
     
     [Tooltip("Altitude minimale pour turbulences fortes (mètres)")]
-    public float minTurbulenceAltitude = 500f;
+    public float minTurbulenceAltitude = 100f;
     
     [Tooltip("Altitude maximale où les turbulences sont au maximum (mètres)")]
-    public float maxTurbulenceAltitude = 3000f;
+    public float maxTurbulenceAltitude = 2000f;
     
     [Tooltip("Force maximale de turbulence appliquée (Newtons)")]
-    public float maxTurbulenceForce = 500f;
+    public float maxTurbulenceForce = 2000f;
     
     [Tooltip("Couple de turbulence maximal (Newton-mètres)")]
-    public float maxTurbulenceTorque = 200f;
+    public float maxTurbulenceTorque = 800f;
     
     [Tooltip("Vitesse de changement des turbulences (Hz)")]
     [Range(0.1f, 10f)]
@@ -59,7 +59,7 @@ public class AtmosphericTurbulence : MonoBehaviour
     
     [Header("Debug")]
     [Tooltip("Afficher les valeurs de turbulence dans la console")]
-    public bool showDebugInfo = false;
+    public bool showDebugInfo = true;
     
     // Variables internes
     private Vector3 turbulenceOffset;
@@ -142,10 +142,23 @@ public class AtmosphericTurbulence : MonoBehaviour
     {
         // Calculer le facteur d'intensité selon l'altitude
         float altitudeFactor = 0f;
-        if (currentAltitude > minTurbulenceAltitude)
+        if (currentAltitude < minTurbulenceAltitude)
         {
+            // En dessous de l'altitude minimale - pas de turbulences
+            altitudeFactor = 0f;
+        }
+        else if (currentAltitude <= maxTurbulenceAltitude)
+        {
+            // Entre min et max - turbulences augmentent
             altitudeFactor = Mathf.InverseLerp(minTurbulenceAltitude, maxTurbulenceAltitude, currentAltitude);
-            altitudeFactor = Mathf.Clamp01(altitudeFactor);
+        }
+        else
+        {
+            // Au-dessus de maxTurbulenceAltitude - turbulences diminuent progressivement
+            float fadeStart = maxTurbulenceAltitude;
+            float fadeEnd = maxTurbulenceAltitude + 2000f; // Disparaissent à +2000m au-dessus
+            altitudeFactor = 1f - Mathf.InverseLerp(fadeStart, fadeEnd, currentAltitude);
+            altitudeFactor = Mathf.Max(0f, altitudeFactor); // Ne jamais être négatif
         }
         
         // Obtenir l'intensité météo locale si WeatherMap disponible

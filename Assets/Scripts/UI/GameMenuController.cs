@@ -37,6 +37,9 @@ public class GameMenuController : MonoBehaviour
     [Tooltip("Lumière directionnelle (soleil) à contrôler")]
     public Light sunLight;
     
+    [Tooltip("Référence au CloudMaster pour modifier les couleurs du ciel")]
+    public CloudMaster cloudMaster;
+    
     [Header("Vue Caméra")]
     [Tooltip("Button pour basculer cockpit/extérieur")]
     public Button toggleViewButton;
@@ -64,6 +67,9 @@ public class GameMenuController : MonoBehaviour
         
         if (cameraViewSwitcher == null)
             cameraViewSwitcher = FindObjectOfType<CameraViewSwitcher>();
+        
+        if (cloudMaster == null)
+            cloudMaster = FindObjectOfType<CloudMaster>();
         
         if (sunLight == null)
         {
@@ -198,12 +204,18 @@ public class GameMenuController : MonoBehaviour
         currentWeatherIntensity = value;
         UpdateWeatherText();
         
-        // Appliquer la météo
+        // Appliquer la météo sur le WeatherMap
         if (weatherMap != null)
         {
-            // WeatherMap utilise probablement une texture procédurale
-            // Vous devrez peut-être adapter selon votre implémentation
-            Debug.Log("Intensité météo changée: " + value);
+            // Modifier minMax pour contrôler la densité des nuages
+            // INVERSÉ: value 0 = beaucoup de nuages, value 1 = peu de nuages
+            // Donc on inverse avec (1 - value)
+            weatherMap.minMax = new Vector2(0f, Mathf.Lerp(0.3f, 1.0f, 1f - value));
+            
+            // Régénérer la weather map avec les nouveaux paramètres
+            weatherMap.UpdateMap();
+            
+            Debug.Log("Météo mise à jour: " + value + " (minMax: " + weatherMap.minMax + ")");
         }
     }
     
@@ -245,7 +257,7 @@ public class GameMenuController : MonoBehaviour
             sunLight.intensity = 0.05f; // Lumière lunaire très faible
         }
         
-        // Changer la couleur
+        // Changer la couleur du soleil
         if (currentTimeOfDay >= 5f && currentTimeOfDay <= 7f)
         {
             // Aube (orange)
@@ -265,6 +277,45 @@ public class GameMenuController : MonoBehaviour
         {
             // Nuit (bleu foncé)
             sunLight.color = new Color(0.5f, 0.6f, 1f);
+        }
+        
+        // Modifier les couleurs du ciel dans CloudMaster
+        UpdateSkyColors();
+    }
+    
+    /// <summary>
+    /// Met à jour les couleurs du ciel selon l'heure
+    /// </summary>
+    void UpdateSkyColors()
+    {
+        if (cloudMaster == null) return;
+        
+        // Définir les couleurs selon l'heure du jour
+        if (currentTimeOfDay >= 5f && currentTimeOfDay <= 7f)
+        {
+            // Aube - Orange/Rose vers Bleu clair
+            float t = (currentTimeOfDay - 5f) / 2f;
+            cloudMaster.colA = Color.Lerp(new Color(1f, 0.4f, 0.2f), new Color(0.5f, 0.7f, 1f), t); // Horizon
+            cloudMaster.colB = Color.Lerp(new Color(0.8f, 0.5f, 0.6f), new Color(0.3f, 0.5f, 0.9f), t); // Zénith
+        }
+        else if (currentTimeOfDay >= 7f && currentTimeOfDay <= 17f)
+        {
+            // Jour - Bleu ciel
+            cloudMaster.colA = new Color(0.5f, 0.7f, 1f); // Bleu clair horizon
+            cloudMaster.colB = new Color(0.3f, 0.5f, 0.9f); // Bleu plus foncé zénith
+        }
+        else if (currentTimeOfDay >= 17f && currentTimeOfDay <= 19f)
+        {
+            // Crépuscule - Bleu vers Orange/Rose
+            float t = (currentTimeOfDay - 17f) / 2f;
+            cloudMaster.colA = Color.Lerp(new Color(0.5f, 0.7f, 1f), new Color(1f, 0.4f, 0.2f), t); // Horizon
+            cloudMaster.colB = Color.Lerp(new Color(0.3f, 0.5f, 0.9f), new Color(0.8f, 0.3f, 0.4f), t); // Zénith
+        }
+        else if (currentTimeOfDay >= 19f || currentTimeOfDay <= 5f)
+        {
+            // Nuit - Bleu très foncé/Noir
+            cloudMaster.colA = new Color(0.05f, 0.05f, 0.15f); // Presque noir avec teinte bleue
+            cloudMaster.colB = new Color(0.02f, 0.02f, 0.1f); // Noir bleuté
         }
     }
     
