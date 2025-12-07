@@ -38,14 +38,22 @@ public class PlaneAnimation : MonoBehaviour {
     float lastManualInputTime;
 
     MFlight.Demo.Plane plane;
+    EngineController engineController;
 
     void Start () {
         plane = GetComponent<MFlight.Demo.Plane> ();
+        engineController = GetComponent<EngineController>();
     }
 
     void Update () {
         // https://en.wikipedia.org/wiki/Aircraft_principal_axes
-        propeller.Rotate (Vector3.forward * propSpeed * Time.deltaTime);
+        
+        // Ne faire tourner l'hélice que si le moteur est allumé
+        // Si EngineController est présent, il gère lui-même la rotation de l'hélice
+        if (engineController == null && propeller != null)
+        {
+            propeller.Rotate (Vector3.forward * propSpeed * Time.deltaTime);
+        }
 
         bool manualActive = true;
         if (animateOnlyOnManualInput) {

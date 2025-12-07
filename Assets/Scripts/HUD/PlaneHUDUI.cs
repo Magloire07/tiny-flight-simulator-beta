@@ -48,6 +48,11 @@ public class PlaneHUDUI : MonoBehaviour
     [Tooltip("RectTransform pour la zone de la carte (future implémentation).")] public RectTransform mapZone;
     [Tooltip("Créer automatiquement la zone de carte si non assignée.")] public bool autoCreateMapZone = true;
     [Tooltip("Taille de la zone de carte.")] public Vector2 mapZoneSize = new Vector2(400, 300);
+    
+    [Header("Engine Control")]
+    [Tooltip("Référence au EngineController pour afficher l'état du moteur")] public EngineController engineController;
+    [Tooltip("Bouton pour allumer/éteindre le moteur")] public Button engineToggleButton;
+    [Tooltip("Texte du bouton moteur")] public Text engineButtonText;
     [Tooltip("Position ancrée de la zone de carte.")] public Vector2 mapZonePosition = new Vector2(-220, -170);
     [Tooltip("Couleur de fond de la zone de carte.")] public Color mapZoneColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
 
@@ -113,6 +118,24 @@ public class PlaneHUDUI : MonoBehaviour
             // L'aiguille à rotation Z = 0° correspond à 0 km/h
             speedAiguille.localRotation = Quaternion.identity;
             isSpeedInitialized = true;
+        }
+        
+        // Initialiser le contrôle moteur
+        if (engineController == null)
+        {
+            engineController = FindObjectOfType<EngineController>();
+        }
+        
+        if (engineController != null && engineToggleButton != null)
+        {
+            // Connecter le bouton au EngineController
+            engineController.engineToggleButton = engineToggleButton;
+            engineController.engineButtonText = engineButtonText;
+            Debug.Log("PlaneHUDUI: Bouton moteur connecté à EngineController");
+        }
+        else if (engineToggleButton != null && engineController == null)
+        {
+            Debug.LogWarning("PlaneHUDUI: Bouton moteur présent mais EngineController introuvable!");
         }
     }
 
