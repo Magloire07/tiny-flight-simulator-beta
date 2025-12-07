@@ -27,6 +27,9 @@ public class GameMenuController : MonoBehaviour
     [Tooltip("Référence au WeatherMap pour modifier la météo")]
     public WeatherMap weatherMap;
     
+    [Tooltip("Référence au système de météo dynamique")]
+    public DynamicWeatherSystem dynamicWeather;
+    
     [Header("Heure")]
     [Tooltip("Slider pour l'heure de la journée (0=minuit, 12=midi, 24=minuit)")]
     public Slider timeSlider;
@@ -74,6 +77,9 @@ public class GameMenuController : MonoBehaviour
         // Trouver les références automatiquement si non assignées
         if (weatherMap == null)
             weatherMap = FindObjectOfType<WeatherMap>();
+        
+        if (dynamicWeather == null)
+            dynamicWeather = FindObjectOfType<DynamicWeatherSystem>();
         
         if (cameraViewSwitcher == null)
             cameraViewSwitcher = FindObjectOfType<CameraViewSwitcher>();
@@ -235,6 +241,12 @@ public class GameMenuController : MonoBehaviour
             weatherMap.UpdateMap();
             
             Debug.Log("Météo mise à jour: " + value + " (minMax: " + weatherMap.minMax + ")");
+        }
+        
+        // Appliquer la météo dynamique (pluie, orage, etc.)
+        if (dynamicWeather != null)
+        {
+            dynamicWeather.SetWeatherIntensity(value);
         }
     }
     
