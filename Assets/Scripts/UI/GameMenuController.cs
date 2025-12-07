@@ -50,6 +50,16 @@ public class GameMenuController : MonoBehaviour
     [Tooltip("Référence au CameraViewSwitcher")]
     public CameraViewSwitcher cameraViewSwitcher;
     
+    [Header("Contrôle Entrée")]
+    [Tooltip("Bouton pour basculer clavier/joystick")]
+    public Button toggleInputButton;
+    
+    [Tooltip("Texte du bouton de contrôle")]
+    public Text toggleInputButtonText;
+    
+    [Tooltip("Référence au InputModeController")]
+    public InputModeController inputModeController;
+    
     [Header("Réglages")]
     [Tooltip("Désactiver le contrôle de l'avion quand le menu est ouvert")]
     public bool disableFlightControlsWhenMenuOpen = true;
@@ -70,6 +80,9 @@ public class GameMenuController : MonoBehaviour
         
         if (cloudMaster == null)
             cloudMaster = FindObjectOfType<CloudMaster>();
+        
+        if (inputModeController == null)
+            inputModeController = FindObjectOfType<InputModeController>();
         
         if (sunLight == null)
         {
@@ -106,6 +119,12 @@ public class GameMenuController : MonoBehaviour
         {
             toggleViewButton.onClick.AddListener(OnToggleViewClicked);
             UpdateViewButtonText();
+        }
+        
+        if (toggleInputButton != null)
+        {
+            toggleInputButton.onClick.AddListener(OnToggleInputClicked);
+            UpdateInputButtonText();
         }
         
         // Ajouter le listener pour le bouton menu
@@ -373,6 +392,29 @@ public class GameMenuController : MonoBehaviour
         if (toggleViewButtonText != null && cameraViewSwitcher != null)
         {
             toggleViewButtonText.text = cameraViewSwitcher.isCockpitView ? "Vue Extérieure" : "Vue Cockpit";
+        }
+    }
+    
+    /// <summary>
+    /// Appelé quand le bouton contrôle est cliqué
+    /// </summary>
+    void OnToggleInputClicked()
+    {
+        if (inputModeController != null)
+        {
+            inputModeController.ToggleInputMode();
+            UpdateInputButtonText();
+        }
+    }
+    
+    /// <summary>
+    /// Met à jour le texte du bouton contrôle
+    /// </summary>
+    void UpdateInputButtonText()
+    {
+        if (toggleInputButtonText != null && inputModeController != null)
+        {
+            toggleInputButtonText.text = "Contrôle: " + inputModeController.GetCurrentModeName();
         }
     }
 }
