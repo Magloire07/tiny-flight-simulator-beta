@@ -243,12 +243,19 @@ public class EngineController : MonoBehaviour
         
         if (engineOn)
         {
+            // S'assurer que l'audio joue
+            if (!engineAudioSource.isPlaying)
+            {
+                engineAudioSource.Play();
+            }
+            
             // Ajuster le pitch selon le throttle
             float targetPitch = Mathf.Lerp(minEnginePitch, maxEnginePitch, plane.throttle);
             engineAudioSource.pitch = Mathf.Lerp(engineAudioSource.pitch, targetPitch, Time.deltaTime * 3f);
             
-            // Ajuster le volume légèrement
-            engineAudioSource.volume = Mathf.Lerp(0.5f, 1f, plane.throttle);
+            // Garder le volume constant quand moteur allumé
+            float targetVolume = Mathf.Lerp(0.6f, 1f, plane.throttle);
+            engineAudioSource.volume = Mathf.Lerp(engineAudioSource.volume, targetVolume, Time.deltaTime * 2f);
         }
         else
         {

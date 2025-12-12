@@ -74,7 +74,24 @@ public class CameraViewSwitcher : MonoBehaviour
     [Tooltip("Vue par défaut au démarrage (false = extérieure, true = cockpit)")]
     public bool startInCockpitView = false;
     
+    [Header("Audio")]
+    [Tooltip("Son du beep lors du changement de vue")]
+    public AudioClip switchViewBeep;
+    
+    [Tooltip("Volume du beep (0-1)")]
+    [Range(0f, 1f)]
+    public float beepVolume = 0.5f;
+    
+    [Tooltip("Pitch du beep pour vue cockpit")]
+    [Range(0.5f, 2f)]
+    public float cockpitBeepPitch = 1.2f;
+    
+    [Tooltip("Pitch du beep pour vue extérieure")]
+    [Range(0.5f, 2f)]
+    public float externalBeepPitch = 0.8f;
+    
     // Variables internes
+    private AudioSource audioSource;
     private Vector3 targetPosition;
     private Quaternion targetRotation;
     private bool useMouseFlightInExternalView = true;
@@ -136,6 +153,16 @@ public class CameraViewSwitcher : MonoBehaviour
             {
                 Debug.Log("CameraViewSwitcher: MouseFlightController trouvé: " + mouseFlightController.name);
             }
+        }
+        
+        // Créer l'AudioSource pour le beep
+        audioSource = gameObject.GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f; // Son 2D
+            audioSource.volume = beepVolume;
         }
         
         // Sauvegarder le FOV initial de la vue externe
@@ -218,13 +245,60 @@ public class CameraViewSwitcher : MonoBehaviour
         if (isCockpitView)
         {
             SetCockpitView(false);
+            PlaySwitchBeep(true);
             Debug.Log("Vue Cockpit activée");
         }
         else
         {
             SetExternalView(false);
+            PlaySwitchBeep(false);
             Debug.Log("Vue Extérieure activée");
         }
+    }
+    
+    /// <summary>
+    /// Joue le son de changement de vue
+    /// </summary>
+    void PlaySwitchBeep(bool toCockpit)
+    {
+        if (audioSource == null) return;
+        
+        if (switchViewBeep != null)
+        {
+            // Pitch différent selon la vue
+            audioSource.pitch = toCockpit ? cockpitBeepPitch : externalBeepPitch;
+            audioSource.PlayOneShot(switchViewBeep, beepVolume);
+        }
+        else
+        {
+            // Beep synthétique si aucun AudioClip n'est assigné
+            audioSource.pitch = toCockpit ? cockpitBeepPitch : externalBeepPitch;
+            audioSource.PlayOneShot(GenerateBeep(), beepVolume);
+        }
+    }
+    
+    /// <summary>
+    /// Génère un beep synthétique simple
+    /// </summary>
+    AudioClip GenerateBeep()
+    {
+        int sampleRate = 44100;
+        int samples = sampleRate / 10; // 0.1 seconde
+        AudioClip beep = AudioClip.Create("Beep", samples, 1, sampleRate, false);
+        
+        float[] data = new float[samples];
+        float frequency = 800f; // Hz
+        
+        for (int i = 0; i < samples; i++)
+        {
+            float t = (float)i / sampleRate;
+            // Onde sinusoïdale avec enveloppe
+            float envelope = 1f - (float)i / samples; // Décroissance
+            data[i] = Mathf.Sin(2f * Mathf.PI * frequency * t) * envelope * 0.5f;
+        }
+        
+        beep.SetData(data, 0);
+        return beep;
     }
     
     /// <summary>
