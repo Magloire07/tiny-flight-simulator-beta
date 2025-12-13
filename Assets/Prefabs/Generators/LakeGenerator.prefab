@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &160665252177341918
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3936069406304512681}
+  - component: {fileID: 152883815497208581}
+  m_Layer: 0
+  m_Name: LakeGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3936069406304512681
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160665252177341918}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 373.91937, y: 2.4518661, z: 386.7305}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &152883815497208581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160665252177341918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a5e2e4301661ec42b301e44ddc1e860, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrain: {fileID: 0}
+  waterSurfacePrefab: {fileID: 919132149155446097, guid: 4ed6ffd030ee9cd4da9eaa13ef76fd6c,
+    type: 3}
+  waterHeight: 0.5
+  lakeCount: 5
+  minLakeRadius: 2
+  maxLakeRadius: 30
+  shapeIrregularity: 0.395
+  treePrefabs:
+  - {fileID: 2572097703481524650, guid: 5d5745a0e63397947b3dbc92a667b7a6, type: 3}
+  - {fileID: 1923626025211512298, guid: f236388441bd2494693c3f4c78ae7ee0, type: 3}
+  - {fileID: 2121971925846843879, guid: b214a049616de1a4badde43d2a617311, type: 3}
+  - {fileID: 6254446686418442743, guid: e793f57831947ae4fa0852191bea53df, type: 3}
+  - {fileID: 7366700822235473312, guid: d534d873f81082e4aa9f93a03e577725, type: 3}
+  - {fileID: 8446878385490231924, guid: 51633e8f8672ebb4ca80eb935ab9bf7b, type: 3}
+  - {fileID: 6395148944297517522, guid: dd1314451e232934d84f9c1f0afb2806, type: 3}
+  treesPerLake: 50
+  treeMinDistance: 1
+  treeMaxDistance: 20
+  treeScaleVariation: 0.249
+  bushPrefabs:
+  - {fileID: 9028934125814072540, guid: b20a4151a6eb1204b868a7f074ba14bb, type: 3}
+  - {fileID: 7123209545155523296, guid: 729ab502b328ed647a983caa6fa634f4, type: 3}
+  - {fileID: 6029795311401681862, guid: 5eacbcac5b6782b4a9bd8b3824ec2e06, type: 3}
+  - {fileID: 1076441135461584650, guid: 48c261e225b3d454388575c2fb5c36fd, type: 3}
+  - {fileID: 3557616539743716873, guid: 133d108f88d567441b1a32938cbfceb6, type: 3}
+  - {fileID: 7539678527731824158, guid: d6f0b21eeb5b4f141b4cae0de89e81a5, type: 3}
+  - {fileID: 4420358942347698057, guid: bd7c237cdce072044b243e45753bc7c2, type: 3}
+  bushesPerLake: 30
+  bushMinDistance: 1
+  bushMaxDistance: 10
+  rockPrefabs: []
+  rocksPerLake: 15
+  rockMinDistance: 1
+  rockMaxDistance: 15
+  generationCenter: {x: 0, y: 0, z: 0}
+  generationRadius: 2000
+  minLakeSpacing: 150
+  lakesParent: {fileID: 0}
+  seed: 190109

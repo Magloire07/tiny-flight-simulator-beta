@@ -1,0 +1,135 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1140716728642663397
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8069784199330505837}
+  - component: {fileID: 7910385179940391790}
+  m_Layer: 0
+  m_Name: CityGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8069784199330505837
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140716728642663397}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 500.5, y: 281.66666, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7910385179940391790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140716728642663397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff67f75501bec664191a36030a30306b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cityWidth: 10
+  cityLength: 10
+  blockSize: 100
+  streetWidth: 10
+  buildingPrefabs:
+  - {fileID: 8051985769325472309, guid: 22b01b1920e109543b7a1ef76356924e, type: 3}
+  - {fileID: 1078515718066926502, guid: 8dfab16e28084cd4da4a4346447d9663, type: 3}
+  - {fileID: 1398429965378699571, guid: b846e66566f20394ea5e77dbedbed858, type: 3}
+  - {fileID: 3021394072774387150, guid: f9be95d7f56731f4b97c4011e28edaab, type: 3}
+  smallBuildingPrefabs:
+  - {fileID: 1360468252654966213, guid: 47589020b1f8f044082bb38c7f20a651, type: 3}
+  - {fileID: 8585650954766913903, guid: 5c06f3174e1062d44b9caa19b044b217, type: 3}
+  - {fileID: 650591154451796056, guid: 459bf6bc825ea9845822408053e0b7aa, type: 3}
+  - {fileID: 5571536447997674746, guid: 32e1e79f6605c1242a465efad631fc8a, type: 3}
+  - {fileID: 3101863424185786759, guid: 38a5fcee4e05f704ab5d33d3ceeddc64, type: 3}
+  - {fileID: 919132149155446097, guid: 389c1cf55c487d74c83bdcdbdf803107, type: 3}
+  - {fileID: 919132149155446097, guid: 4df0b4e5bbe85184f949ee50fe43410e, type: 3}
+  - {fileID: 5836706597840631150, guid: 916f5058d5c38aa4fb49d3769570cfab, type: 3}
+  - {fileID: 167982683308031783, guid: 77d6fa167b9dd4f4aa91eec897b956f3, type: 3}
+  mediumBuildingPrefabs:
+  - {fileID: 8664407419727344564, guid: d80f2a46cbb396249a31214f36357b86, type: 3}
+  - {fileID: 1805269126570203252, guid: cab431cd2a680084693f2afc089d81fa, type: 3}
+  - {fileID: 7861617570233870979, guid: 5154c08efe2be6a44bc4d1ff6a11317e, type: 3}
+  - {fileID: 6045110163862441004, guid: fe3b2a494e25ed94fb3ba66807a29c88, type: 3}
+  - {fileID: 8371394403700878939, guid: 62c0240cc3fc4c143a97d1592b939b05, type: 3}
+  - {fileID: 3560677691335973418, guid: 47ca09283686fe942ac10af1a25af801, type: 3}
+  - {fileID: 4810578117870855338, guid: cb4d35c78a2eea94a9a4e9ae36afa35a, type: 3}
+  - {fileID: 4942924285804547158, guid: 0919f6373d0ba3c42898d72b84b02b38, type: 3}
+  - {fileID: 4942924285804547158, guid: 0919f6373d0ba3c42898d72b84b02b38, type: 3}
+  skyscraperPrefabs:
+  - {fileID: 8574126208851778763, guid: 1af931aca7705774390e773654b1f205, type: 3}
+  - {fileID: 7572431748435757812, guid: 8b911890c430a41429a18247788dde0a, type: 3}
+  - {fileID: 7572431748435757812, guid: 8b911890c430a41429a18247788dde0a, type: 3}
+  - {fileID: 8574126208851778763, guid: 1af931aca7705774390e773654b1f205, type: 3}
+  - {fileID: 8574126208851778763, guid: 456d107036c33a74bbd5452b53771e60, type: 3}
+  - {fileID: 8574126208851778763, guid: 456d107036c33a74bbd5452b53771e60, type: 3}
+  buildingDensity: 1
+  skyscraperProbabilityCenter: 0.8
+  skyscraperProbabilityEdge: 0.1
+  roadPrefab: {fileID: 7546371180376575364, guid: 69b6afc22a2bf5143bb43500f6fdc949,
+    type: 3}
+  intersectionPrefab: {fileID: 7186611593404455177, guid: 9123a496f00e31842b80b49e7b41ac8b,
+    type: 3}
+  roadHeight: 0.1
+  signPrefabs:
+  - {fileID: 7195187737987913630, guid: d3e0ea8d2ad84a44b9969cd6eb557c95, type: 3}
+  - {fileID: 7733277219335523361, guid: c840005cc45aef44f9deddd8aa7c06ff, type: 3}
+  - {fileID: 2311571893751504399, guid: 4a6a6a5f5ddb6ff419905ada63dcf371, type: 3}
+  - {fileID: 184116294522184614, guid: b5093371031d8f042b570850db51e4c8, type: 3}
+  - {fileID: 4627218568789537497, guid: 2787b467ed3c8ee48b9822e998f9a0d2, type: 3}
+  - {fileID: 7296311380974656284, guid: 43e9368bda81b2140b73c6600e886eff, type: 3}
+  - {fileID: 4229988685527396178, guid: 9cc691e37e08e6c4fa246f3c258a5a41, type: 3}
+  - {fileID: 5275204802191473083, guid: 60fcd6cb66ef6b24186ac181434c8d39, type: 3}
+  - {fileID: 4548526875333577048, guid: 15d30e5c7d2f10248b93bda3a7f5cf4f, type: 3}
+  - {fileID: 204855500845922287, guid: c8a9a131f340a544dbc4aedd64b6e49e, type: 3}
+  - {fileID: 154922620576216796, guid: 54e67c7eb097fcb4d809170a98d90578, type: 3}
+  - {fileID: 6738442032925104237, guid: 1f799de0e108bb046af6da5a76752b99, type: 3}
+  - {fileID: 6345538668197865643, guid: 5a2bcda7ce7dee34d932df6cc8aae273, type: 3}
+  - {fileID: 3750347943827207326, guid: bd7a5d8c34038d1478732c9eda50ed78, type: 3}
+  streetTreePrefabs:
+  - {fileID: 5716472912363847415, guid: dae355c214058de40833e1dc07b9568c, type: 3}
+  - {fileID: 2060589233173438422, guid: 8ce6b6e7fcdc39243881ee68d05db72a, type: 3}
+  - {fileID: 9208280024704128269, guid: aed1104f428065b49adcf13dac2ed8c7, type: 3}
+  - {fileID: 3489192851198715285, guid: 6ce5d694780084341b1025650bdd432c, type: 3}
+  - {fileID: 6184434111218818029, guid: 5ed59cd74d779b247a0de3970801fda1, type: 3}
+  - {fileID: 2315945574744369591, guid: 77f6a103abe35be4988d429034fe818f, type: 3}
+  - {fileID: 7698324677040609889, guid: d0e7a696e4ad0fc4e951bdf7a9deb112, type: 3}
+  - {fileID: 2613924079921196393, guid: 2643cc8c8bd191d4aa2a0f3d50abab65, type: 3}
+  signSpacing: 40
+  treeSpacing: 25
+  treeOffset: 6
+  signOffset: 2
+  groundPrefabs:
+  - {fileID: 8628059962668431258, guid: 8d59287f4b13e5446bf1c31c7c600f55, type: 3}
+  - {fileID: 2046764804822347112, guid: e41f2185f1c11a8409ff3cd219f789a1, type: 3}
+  - {fileID: 2046764804822347112, guid: e41f2185f1c11a8409ff3cd219f789a1, type: 3}
+  parkPrefabs:
+  - {fileID: 2046764804822347112, guid: e41f2185f1c11a8409ff3cd219f789a1, type: 3}
+  - {fileID: 7705743548999295023, guid: d029fd3df6996fb42a03b510a445abd8, type: 3}
+  parkProbability: 0
+  seed: 815457
+  generateOnStart: 0
+  cityParent: {fileID: 0}
+  combineMeshes: 0
+  cullingDistance: 2000
+  createConnectionPoint: 1
+  cityConnectionPoint: {fileID: 2346550338372207340, guid: dee380977b357bd49add80b2225d8bb7,
+    type: 3}
+  connectionPointHeight: 5

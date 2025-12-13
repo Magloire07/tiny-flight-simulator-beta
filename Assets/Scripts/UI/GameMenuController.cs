@@ -64,6 +64,10 @@ public class GameMenuController : MonoBehaviour
     [Tooltip("Référence au InputModeController")]
     public InputModeController inputModeController;
     
+    [Header("Brouillard")]
+    [Tooltip("Toggle pour activer/désactiver le brouillard")]
+    public Toggle fogToggle;
+    
     [Header("Menu Principal")]
     [Tooltip("Bouton pour retourner au menu principal")]
     public Button returnToMainMenuButton;
@@ -128,19 +132,25 @@ public class GameMenuController : MonoBehaviour
         
         if (toggleViewButton != null)
         {
+            toggleViewButton.onClick.AddListener(OnToggleViewClicked);
+            UpdateViewButtonText();
+        }
+        
         if (toggleInputButton != null)
         {
             toggleInputButton.onClick.AddListener(OnToggleInputClicked);
             UpdateInputButtonText();
         }
         
+        if (fogToggle != null)
+        {
+            fogToggle.isOn = false; // Désactivé par défaut
+            fogToggle.onValueChanged.AddListener(OnFogToggleChanged);
+        }
+        
         if (returnToMainMenuButton != null)
         {
             returnToMainMenuButton.onClick.AddListener(ReturnToMainMenu);
-        }
-        
-        // Ajouter le listener pour le bouton menuOnToggleInputClicked);
-            UpdateInputButtonText();
         }
         
         // Ajouter le listener pour le bouton menu
@@ -444,6 +454,18 @@ public class GameMenuController : MonoBehaviour
         if (toggleInputButtonText != null && inputModeController != null)
         {
             toggleInputButtonText.text = "Contrôle: " + inputModeController.GetCurrentModeName();
+        }
+    }
+    
+    /// <summary>
+    /// Appelé quand le toggle du brouillard change
+    /// </summary>
+    public void OnFogToggleChanged(bool isOn)
+    {
+        if (dynamicWeather != null)
+        {
+            dynamicWeather.useFog = isOn;
+            Debug.Log($"GameMenuController: Brouillard {(isOn ? "activé" : "désactivé")}");
         }
     }
     

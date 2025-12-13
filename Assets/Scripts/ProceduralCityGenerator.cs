@@ -35,7 +35,7 @@ public class ProceduralCityGenerator : MonoBehaviour
     [Header("Densité")]
     [Tooltip("Probabilité qu'un emplacement ait un bâtiment (0-1)")]
     [Range(0f, 1f)]
-    public float buildingDensity = 0.7f;
+    public float buildingDensity = 1f;
     
     [Tooltip("Probabilité de gratte-ciel au centre (0-1)")]
     [Range(0f, 1f)]
@@ -55,20 +55,42 @@ public class ProceduralCityGenerator : MonoBehaviour
     [Tooltip("Hauteur des routes (Y)")]
     public float roadHeight = 0.1f;
     
+    [Header("Bordures de Routes")]
+    [Tooltip("Prefabs de panneaux de signalisation")]
+    public GameObject[] signPrefabs;
+    
+    [Tooltip("Prefabs d'arbres urbains")]
+    public GameObject[] streetTreePrefabs;
+    
+    [Tooltip("Espacement entre les panneaux (en mètres)")]
+    public float signSpacing = 15f;
+    
+    [Tooltip("Espacement entre les arbres (en mètres)")]
+    public float treeSpacing = 8f;
+    
+    [Tooltip("Distance du bord de la route pour les arbres (en mètres)")]
+    public float treeOffset = 6f;
+    
+    [Tooltip("Distance du bord de la route pour les panneaux (en mètres)")]
+    public float signOffset = 2f;
+    
     [Header("Espaces Verts")]
+    [Tooltip("Prefabs de sols variés (herbe verte, terre marron, etc.)")]
+    public GameObject[] groundPrefabs;
+    
     [Tooltip("Prefabs de parcs")]
     public GameObject[] parkPrefabs;
     
     [Tooltip("Probabilité d'avoir un parc au lieu d'un bâtiment (0-1)")]
     [Range(0f, 1f)]
-    public float parkProbability = 0.05f;
+    public float parkProbability = 0.02f;
     
     [Header("Génération")]
     [Tooltip("Graine aléatoire pour la génération (0 = aléatoire)")]
     public int seed = 0;
     
     [Tooltip("Générer automatiquement au démarrage")]
-    public bool generateOnStart = true;
+    public bool generateOnStart = false;
     
     [Tooltip("Parent pour organiser la hiérarchie")]
     public Transform cityParent;
@@ -79,6 +101,16 @@ public class ProceduralCityGenerator : MonoBehaviour
     
     [Tooltip("Distance de culling des bâtiments (0 = désactivé)")]
     public float cullingDistance = 2000f;
+    
+    [Header("Connexion Routes Campagne")]
+    [Tooltip("Créer un point de connexion pour les routes de campagne")]
+    public bool createConnectionPoint = true;
+    
+    [Tooltip("Point de connexion créé (pour CountryRoadGenerator)")]
+    public Transform cityConnectionPoint;
+    
+    [Tooltip("Hauteur du point de connexion")]
+    public float connectionPointHeight = 5f;
     
     // Structure de données
     private GridCell[,] cityGrid;
@@ -100,6 +132,20 @@ public class ProceduralCityGenerator : MonoBehaviour
     public void GenerateCity()
     {
         Debug.Log("ProceduralCityGenerator: Début de la génération...");
+        
+        // Vérifier les prefabs essentiels
+        if (roadPrefab == null)
+        {
+            Debug.LogError("ProceduralCityGenerator: ERREUR - roadPrefab n'est pas assigné! Assignez un prefab de route dans l'Inspector.");
+            return;
+        }
+        
+        if (buildingPrefabs.Length == 0 && smallBuildingPrefabs.Length == 0 && 
+            mediumBuildingPrefabs.Length == 0 && skyscraperPrefabs.Length == 0)
+        {
+            Debug.LogError("ProceduralCityGenerator: ERREUR - Aucun prefab de bâtiment assigné! Assignez au moins un tableau de bâtiments dans l'Inspector.");
+            return;
+        }
         
         // Initialiser le générateur aléatoire
         if (seed == 0)
@@ -125,8 +171,17 @@ public class ProceduralCityGenerator : MonoBehaviour
         // Générer les routes
         GenerateRoads();
         
+        // Générer les panneaux et arbres en bordure de routes
+        GenerateRoadsideElements();
+        
         // Générer les bâtiments
         GenerateBuildings();
+        
+        // Créer le point de connexion pour les routes de campagne
+        if (createConnectionPoint)
+        {
+            CreateCityConnectionPoint();
+        }
         
         // Optimisation optionnelle
         if (combineMeshes)
@@ -170,17 +225,25 @@ public class ProceduralCityGenerator : MonoBehaviour
         
         return cityParent.position + new Vector3(offsetX, 0f, offsetZ);
     }
+    
+    /// <summary>
+    /// Obtient la position centrale d'un bloc (pour placer les bâtiments)
+    /// </summary>
+    Vector3 GetBlockCenterPosition(int gridX, int gridZ)
+    {
+        float totalBlockSize = blockSize + streetWidth;
+        float offsetX = gridX * totalBlockSize + blockSize / 2f;
+        float offsetZ = gridZ * totalBlockSize + blockSize / 2f;
+        
+        return cityParent.position + new Vector3(offsetX, 0f, offsetZ);
+    }
 
     /// <summary>
     /// Génère le réseau de routes
     /// </summary>
     void GenerateRoads()
     {
-        if (roadPrefab == null)
-        {
-            Debug.LogWarning("ProceduralCityGenerator: Aucun prefab de route assigné!");
-            return;
-        }
+        Debug.Log("ProceduralCityGenerator: Génération des routes...");
         
         Transform roadsParent = new GameObject("Roads").transform;
         roadsParent.SetParent(cityParent);
@@ -254,6 +317,116 @@ public class ProceduralCityGenerator : MonoBehaviour
     }
 
     /// <summary>
+    /// Génère les panneaux et arbres le long des routes
+    /// </summary>
+    void GenerateRoadsideElements()
+    {
+        Debug.Log("ProceduralCityGenerator: Génération des panneaux et arbres...");
+        
+        Transform roadsideParent = new GameObject("RoadsideElements").transform;
+        roadsideParent.SetParent(cityParent);
+        
+        float totalBlockSize = blockSize + streetWidth;
+        
+        // Panneaux et arbres le long des routes horizontales
+        for (int z = 0; z <= cityLength; z++)
+        {
+            float roadZ = z * totalBlockSize - streetWidth / 2f;
+            
+            // Le long de cette route horizontale
+            for (float x = 0; x < cityWidth * totalBlockSize; x += treeSpacing)
+            {
+                Vector3 position = cityParent.position + new Vector3(x, roadHeight, roadZ);
+                
+                // Arbres des deux côtés de la route (plus loin)
+                if (streetTreePrefabs != null && streetTreePrefabs.Length > 0 && random.NextDouble() < 0.8f)
+                {
+                    PlaceStreetTree(position + Vector3.forward * treeOffset, roadsideParent);
+                    PlaceStreetTree(position + Vector3.back * treeOffset, roadsideParent);
+                }
+            }
+            
+            // Panneaux moins fréquents (plus près de la route)
+            for (float x = 0; x < cityWidth * totalBlockSize; x += signSpacing)
+            {
+                Vector3 position = cityParent.position + new Vector3(x, roadHeight, roadZ);
+                
+                if (signPrefabs != null && signPrefabs.Length > 0 && random.NextDouble() < 0.6f)
+                {
+                    PlaceSign(position + Vector3.forward * signOffset, 180f, roadsideParent);
+                }
+            }
+        }
+        
+        // Panneaux et arbres le long des routes verticales
+        for (int x = 0; x <= cityWidth; x++)
+        {
+            float roadX = x * totalBlockSize - streetWidth / 2f;
+            
+            // Le long de cette route verticale
+            for (float z = 0; z < cityLength * totalBlockSize; z += treeSpacing)
+            {
+                Vector3 position = cityParent.position + new Vector3(roadX, roadHeight, z);
+                
+                // Arbres des deux côtés de la route (plus loin)
+                if (streetTreePrefabs != null && streetTreePrefabs.Length > 0 && random.NextDouble() < 0.8f)
+                {
+                    PlaceStreetTree(position + Vector3.right * treeOffset, roadsideParent);
+                    PlaceStreetTree(position + Vector3.left * treeOffset, roadsideParent);
+                }
+            }
+            
+            // Panneaux moins fréquents (plus près de la route)
+            for (float z = 0; z < cityLength * totalBlockSize; z += signSpacing)
+            {
+                Vector3 position = cityParent.position + new Vector3(roadX, roadHeight, z);
+                
+                if (signPrefabs != null && signPrefabs.Length > 0 && random.NextDouble() < 0.6f)
+                {
+                    PlaceSign(position + Vector3.right * signOffset, 90f, roadsideParent);
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Place un arbre en bordure de route
+    /// </summary>
+    void PlaceStreetTree(Vector3 position, Transform parent)
+    {
+        GameObject treePrefab = streetTreePrefabs[random.Next(streetTreePrefabs.Length)];
+        GameObject tree = Instantiate(treePrefab, position, Quaternion.identity);
+        tree.transform.SetParent(parent);
+        
+        // Rotation aléatoire
+        float rotation = (float)random.NextDouble() * 360f;
+        tree.transform.rotation = Quaternion.Euler(0f, rotation, 0f);
+        
+        // Légère variation d'échelle
+        float scale = 0.9f + (float)random.NextDouble() * 0.2f; // 0.9 à 1.1
+        tree.transform.localScale *= scale;
+        
+        generatedObjects.Add(tree);
+    }
+    
+    /// <summary>
+    /// Place un panneau de signalisation
+    /// </summary>
+    void PlaceSign(Vector3 position, float baseRotation, Transform parent)
+    {
+        GameObject signPrefab = signPrefabs[random.Next(signPrefabs.Length)];
+        
+        // Rotation vers la route
+        float randomOffset = ((float)random.NextDouble() - 0.5f) * 30f; // ±15°
+        Quaternion rotation = Quaternion.Euler(0f, baseRotation + randomOffset, 0f);
+        
+        GameObject sign = Instantiate(signPrefab, position, rotation);
+        sign.transform.SetParent(parent);
+        
+        generatedObjects.Add(sign);
+    }
+    
+    /// <summary>
     /// Crée une intersection
     /// </summary>
     void CreateIntersection(Vector3 position, Transform parent)
@@ -275,8 +448,13 @@ public class ProceduralCityGenerator : MonoBehaviour
     /// </summary>
     void GenerateBuildings()
     {
+        Debug.Log("ProceduralCityGenerator: Génération des bâtiments...");
+        
         Transform buildingsParent = new GameObject("Buildings").transform;
         buildingsParent.SetParent(cityParent);
+        
+        Transform groundParent = new GameObject("GroundBlocks").transform;
+        groundParent.SetParent(cityParent);
         
         Vector2 center = new Vector2(cityWidth / 2f, cityLength / 2f);
         
@@ -284,25 +462,62 @@ public class ProceduralCityGenerator : MonoBehaviour
         {
             for (int z = 0; z < cityLength; z++)
             {
-                // Vérifier la densité
-                if (random.NextDouble() > buildingDensity)
-                    continue;
+                // Position centrale du bloc
+                Vector3 blockCenter = GetBlockCenterPosition(x, z);
+                
+                // 1. TOUJOURS créer un sol (vert/marron) pour CHAQUE bloc - pas de probabilité
+                CreateGroundBlock(blockCenter, groundParent);
                 
                 // Calculer la distance au centre (normalisée)
                 float distanceToCenter = Vector2.Distance(new Vector2(x, z), center) / (cityWidth / 2f);
                 
-                // Décider du type de bâtiment
-                Vector3 position = GetWorldPosition(x, z);
-                
-                // Chance de parc
+                // 2. TOUJOURS ajouter des bâtiments par-dessus le sol - 100% densité
+                // Chance de parc (ajoute des éléments décoratifs) - très rare
                 if (random.NextDouble() < parkProbability && parkPrefabs.Length > 0)
                 {
-                    CreatePark(position, buildingsParent);
+                    CreatePark(blockCenter, buildingsParent);
                     cityGrid[x, z].type = CellType.Park;
                 }
                 else
                 {
-                    CreateBuilding(position, distanceToCenter, buildingsParent);
+                    // Placer les bâtiments de manière hétérogène avec chevauchements minimes
+                    int buildingsInBlock = random.Next(50, 80); // Maximum: 50-80 bâtiments par bloc
+                    float minBuildingSpacing = 5f; // Distance minimale entre bâtiments
+                    List<Vector3> placedPositions = new List<Vector3>();
+                    
+                    int attempts = 0;
+                    int maxAttempts = buildingsInBlock * 10;
+                    
+                    while (placedPositions.Count < buildingsInBlock && attempts < maxAttempts)
+                    {
+                        attempts++;
+                        
+                        // Position complètement aléatoire dans le bloc
+                        float offsetX = ((float)random.NextDouble() - 0.5f) * blockSize * 0.9f;
+                        float offsetZ = ((float)random.NextDouble() - 0.5f) * blockSize * 0.9f;
+                        Vector3 position = blockCenter + new Vector3(offsetX, 0f, offsetZ);
+                        
+                        // Vérifier la distance minimale avec les autres bâtiments
+                        bool tooClose = false;
+                        foreach (Vector3 existing in placedPositions)
+                        {
+                            float distance = Vector2.Distance(
+                                new Vector2(position.x, position.z),
+                                new Vector2(existing.x, existing.z)
+                            );
+                            if (distance < minBuildingSpacing)
+                            {
+                                tooClose = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!tooClose)
+                        {
+                            CreateBuilding(position, distanceToCenter, buildingsParent);
+                            placedPositions.Add(position);
+                        }
+                    }
                     cityGrid[x, z].type = CellType.Building;
                 }
             }
@@ -341,23 +556,29 @@ public class ProceduralCityGenerator : MonoBehaviour
     /// </summary>
     GameObject SelectBuildingPrefab(float distanceToCenter)
     {
-        // Probabilité de gratte-ciel diminue avec la distance
-        float skyscraperProb = Mathf.Lerp(skyscraperProbabilityCenter, skyscraperProbabilityEdge, distanceToCenter);
+        // Favoriser les petits et moyens bâtiments (densité urbaine réaliste)
+        double rand = random.NextDouble();
         
-        if (random.NextDouble() < skyscraperProb && skyscraperPrefabs.Length > 0)
+        // Au centre : 50% petits, 30% moyens, 20% gratte-ciels
+        // En périphérie : 70% petits, 25% moyens, 5% gratte-ciels
+        float smallProb = Mathf.Lerp(0.5f, 0.7f, distanceToCenter);
+        float mediumProb = Mathf.Lerp(0.3f, 0.25f, distanceToCenter);
+        // Le reste = gratte-ciels
+        
+        if (rand < smallProb && smallBuildingPrefabs.Length > 0)
         {
-            // Gratte-ciel
-            return skyscraperPrefabs[random.Next(skyscraperPrefabs.Length)];
+            // Petit bâtiment (50-70%)
+            return smallBuildingPrefabs[random.Next(smallBuildingPrefabs.Length)];
         }
-        else if (distanceToCenter < 0.5f && mediumBuildingPrefabs.Length > 0)
+        else if (rand < smallProb + mediumProb && mediumBuildingPrefabs.Length > 0)
         {
-            // Bâtiment moyen (zone intermédiaire)
+            // Bâtiment moyen (25-30%)
             return mediumBuildingPrefabs[random.Next(mediumBuildingPrefabs.Length)];
         }
-        else if (smallBuildingPrefabs.Length > 0)
+        else if (skyscraperPrefabs.Length > 0)
         {
-            // Petit bâtiment (périphérie)
-            return smallBuildingPrefabs[random.Next(smallBuildingPrefabs.Length)];
+            // Gratte-ciel (5-20%)
+            return skyscraperPrefabs[random.Next(skyscraperPrefabs.Length)];
         }
         else if (buildingPrefabs.Length > 0)
         {
@@ -368,6 +589,42 @@ public class ProceduralCityGenerator : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Crée un bloc de sol/herbe qui couvre tout le bloc
+    /// </summary>
+    void CreateGroundBlock(Vector3 centerPosition, Transform parent)
+    {
+        if (groundPrefabs == null || groundPrefabs.Length == 0)
+        {
+            Debug.LogWarning("ProceduralCityGenerator: Aucun groundPrefab assigné! Les blocs n'auront pas de sol.");
+            return;
+        }
+        
+        // Choisir un prefab de sol aléatoire pour créer de la variété (vert, marron, etc.)
+        GameObject selectedGroundPrefab = groundPrefabs[random.Next(groundPrefabs.Length)];
+        
+        // Position légèrement en dessous pour être sous les bâtiments
+        Vector3 groundPosition = centerPosition + Vector3.down * 0.1f;
+        
+        GameObject ground = Instantiate(selectedGroundPrefab, groundPosition, Quaternion.identity);
+        ground.transform.SetParent(parent);
+        ground.name = "GroundBlock";
+        
+        // Rotation aléatoire pour plus de variété
+        float rotation = random.Next(4) * 90f; // 0°, 90°, 180°, 270°
+        ground.transform.rotation = Quaternion.Euler(0f, rotation, 0f);
+        
+        // Ajuster l'échelle pour couvrir le bloc sans cacher les routes
+        // Le prefab Env_GrassLand_Plain fait 5m de base (scale 20 = 100m)
+        Vector3 scale = ground.transform.localScale;
+        float targetSize = blockSize + streetWidth * 0.1f; // Petit débordement pour éviter les espaces mais laisse les routes visibles
+        scale.x = targetSize / 5f; // Diviser par 5m (taille de base du prefab)
+        scale.z = targetSize / 5f;
+        ground.transform.localScale = scale;
+        
+        generatedObjects.Add(ground);
+    }
+    
     /// <summary>
     /// Crée un parc
     /// </summary>
@@ -398,10 +655,14 @@ public class ProceduralCityGenerator : MonoBehaviour
         
         if (cityParent != null && cityParent.childCount > 0)
         {
-            // Détruire tous les enfants restants
+            // Détruire tous les enfants restants (sauf le point de connexion)
             for (int i = cityParent.childCount - 1; i >= 0; i--)
             {
-                DestroyImmediate(cityParent.GetChild(i).gameObject);
+                Transform child = cityParent.GetChild(i);
+                if (child != cityConnectionPoint) // Garder le point de connexion
+                {
+                    DestroyImmediate(child.gameObject);
+                }
             }
         }
         
@@ -409,14 +670,50 @@ public class ProceduralCityGenerator : MonoBehaviour
     }
 
     /// <summary>
+    /// Crée un point de connexion au centre de la ville pour les routes de campagne
+    /// </summary>
+    void CreateCityConnectionPoint()
+    {
+        // Calculer le centre de la ville
+        float totalBlockSize = blockSize + streetWidth;
+        Vector3 centerOffset = new Vector3(
+            (cityWidth - 1) * totalBlockSize / 2f,
+            connectionPointHeight,
+            (cityLength - 1) * totalBlockSize / 2f
+        );
+        
+        Vector3 centerPosition = cityParent.position + centerOffset;
+        
+        // Créer ou mettre à jour le point de connexion
+        if (cityConnectionPoint == null)
+        {
+            GameObject connectionObj = new GameObject("CityConnectionPoint");
+            cityConnectionPoint = connectionObj.transform;
+            cityConnectionPoint.SetParent(cityParent);
+        }
+        
+        cityConnectionPoint.position = centerPosition;
+        
+        Debug.Log($"ProceduralCityGenerator: Point de connexion créé au centre de la ville: {centerPosition}");
+    }
+    
+    /// <summary>
+    /// Obtient le point de connexion de la ville
+    /// </summary>
+    public Transform GetConnectionPoint()
+    {
+        return cityConnectionPoint;
+    }
+    
+    /// <summary>
     /// Combine les meshes pour optimisation
     /// </summary>
     void CombineCityMeshes()
     {
-        // TODO: Implémenter la combinaison de meshes
-        Debug.Log("ProceduralCityGenerator: Combinaison de meshes non implémentée");
+        // TODO: Implémenter la combinaison de meshes pour optimisation
+        Debug.Log("ProceduralCityGenerator: Combinaison de meshes non encore implémentée");
     }
-
+    
     /// <summary>
     /// Affiche la grille en mode édition
     /// </summary>
@@ -441,30 +738,44 @@ public class ProceduralCityGenerator : MonoBehaviour
                 Vector3 end = start + new Vector3(cityWidth * totalBlockSize + streetWidth, 0f, 0f);
                 Gizmos.DrawLine(start, end);
             }
+            
+            // Dessiner le point de connexion
+            if (createConnectionPoint)
+            {
+                Gizmos.color = Color.cyan;
+                Vector3 centerOffset = new Vector3(
+                    (cityWidth - 1) * totalBlockSize / 2f,
+                    connectionPointHeight,
+                    (cityLength - 1) * totalBlockSize / 2f
+                );
+                Vector3 centerPosition = transform.position + centerOffset;
+                Gizmos.DrawWireSphere(centerPosition, 30f);
+                Gizmos.DrawLine(centerPosition, centerPosition + Vector3.down * connectionPointHeight);
+            }
         }
     }
-}
+    
+    /// <summary>
+    /// Structure de cellule de grille
+    /// </summary>
+    [System.Serializable]
+    public class GridCell
+    {
+        public int x;
+        public int z;
+        public Vector3 position;
+        public CellType type;
+    }
 
-/// <summary>
-/// Structure de cellule de grille
-/// </summary>
-[System.Serializable]
-public class GridCell
-{
-    public int x;
-    public int z;
-    public Vector3 position;
-    public CellType type;
-}
-
-/// <summary>
-/// Types de cellules
-/// </summary>
-public enum CellType
-{
-    Empty,
-    Building,
-    Road,
-    Park,
-    Intersection
+    /// <summary>
+    /// Types de cellules
+    /// </summary>
+    public enum CellType
+    {
+        Empty,
+        Building,
+        Road,
+        Park,
+        Intersection
+    }
 }

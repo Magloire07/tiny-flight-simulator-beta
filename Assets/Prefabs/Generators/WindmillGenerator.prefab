@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5572884246374840358
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3528974478719699547}
+  - component: {fileID: 3047036533858285874}
+  m_Layer: 0
+  m_Name: WindmillGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3528974478719699547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5572884246374840358}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3047036533858285874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5572884246374840358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 351cd4064b812e440905dea9b17efac4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrain: {fileID: 0}
+  windmillPrefab: {fileID: 3314656766657741337, guid: 6c20b91f6f25ebb499766bb0be6b5f8a,
+    type: 3}
+  windmillCount: 10
+  scaleVariation: 0.1
+  bladesObjectName: Blades
+  rotationSpeed: 30
+  speedVariation: 0.3
+  rotationAxis: {x: 0, y: 0, z: 1}
+  generationCenter: {x: 0, y: 0, z: 0}
+  generationRadius: 2000
+  minWindmillSpacing: 100
+  preferHighGround: 1
+  minAltitude: 50
+  fencePrefab: {fileID: 292397895233924947, guid: 5274874475fde154fb9568e87c5dc0d3,
+    type: 3}
+  createFence: 1
+  fenceRadius: 13
+  fenceSegments: 32
+  vegetationPrefabs:
+  - {fileID: 7413446242986566274, guid: 541b08bc544cf124daf4a447f2d514f0, type: 3}
+  - {fileID: 7413446242986566274, guid: 541b08bc544cf124daf4a447f2d514f0, type: 3}
+  - {fileID: 1220038068195178567, guid: 136a5d02f7166784bb45906490294bfc, type: 3}
+  - {fileID: 1220038068195178567, guid: 136a5d02f7166784bb45906490294bfc, type: 3}
+  vegetationPerWindmill: 12
+  vegetationDistance: 10
+  windmillsParent: {fileID: 0}
+  seed: 650898

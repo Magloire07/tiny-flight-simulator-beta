@@ -33,7 +33,7 @@ public class DynamicWeatherSystem : MonoBehaviour
     
     [Header("Brouillard")]
     [Tooltip("Activer le brouillard")]
-    public bool useFog = true;
+    public bool useFog = false;
     
     [Tooltip("Distance de brouillard minimale (beau temps)")]
     public float minFogDistance = 2000f;

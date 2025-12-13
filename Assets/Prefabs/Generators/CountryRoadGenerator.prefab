@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2798913086778667789
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5099351250877412359}
+  - component: {fileID: 7950433836519301551}
+  m_Layer: 0
+  m_Name: CountryRoadGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5099351250877412359
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798913086778667789}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1050.4963, y: 285.37274, z: 660}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7950433836519301551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798913086778667789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bdb32882ec566147a9ee2325d4b0e9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  countryRoadPrefab: {fileID: 7546371180376575364, guid: 69b6afc22a2bf5143bb43500f6fdc949,
+    type: 3}
+  countryIntersectionPrefab: {fileID: 7186611593404455177, guid: 9123a496f00e31842b80b49e7b41ac8b,
+    type: 3}
+  roadWidth: 8
+  segmentLength: 8
+  connectionPoints: []
+  generateMainRoads: 1
+  mainRoadSpacing: 500
+  horizontalMainRoads: 3
+  verticalMainRoads: 3
+  generateSecondaryRoads: 1
+  secondaryRoadCount: 10
+  minSecondaryRoadLength: 200
+  maxSecondaryRoadLength: 800
+  followTerrain: 1
+  heightAboveTerrain: 0.2
+  terrain: {fileID: 0}
+  seed: 728743
+  roadParent: {fileID: 0}
