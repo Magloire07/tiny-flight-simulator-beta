@@ -54,27 +54,27 @@ public class ProceduralWorldManager : MonoBehaviour
     [Header("Densité de Génération (Perlin Noise)")]
     [Tooltip("Seuil Perlin pour villes (0-1) - plus bas = plus de villes")]
     [Range(0f, 1f)]
-    public float cityThreshold = 0.05f;
+    public float cityThreshold = 0.051f;
     
     [Tooltip("Seuil Perlin pour lacs (0-1) - plus bas = plus de lacs")]
     [Range(0f, 1f)]
-    public float lakeThreshold = 0.4f;
+    public float lakeThreshold = 0.185f;
     
     [Tooltip("Seuil Perlin pour moulins (0-1) - plus bas = plus de moulins")]
     [Range(0f, 1f)]
-    public float windmillThreshold = 0.25f;
+    public float windmillThreshold = 0.19f;
     
     [Tooltip("Seuil Perlin pour routes (0-1)")]
     [Range(0f, 1f)]
-    public float countryRoadThreshold = 0.2f;
+    public float countryRoadThreshold = 0.45f;
     
     [Tooltip("Seuil Perlin pour chemins de ferme (0-1)")]
     [Range(0f, 1f)]
-    public float farmRoadThreshold = 0.15f;
+    public float farmRoadThreshold = 0.325f;
     
     [Tooltip("Seuil Perlin pour aéroports (0-1) - plus haut = plus rare")]
     [Range(0f, 1f)]
-    public float airportThreshold = 0.85f;
+    public float airportThreshold = 0.303f;
     
     [Header("Fréquences Perlin Noise")]
     [Tooltip("Échelle du bruit pour villes (plus petit = zones plus grandes)")]
