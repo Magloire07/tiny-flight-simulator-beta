@@ -25,20 +25,24 @@ public class MainMenuController : MonoBehaviour
     public GameObject tutorialPanel;
     
     [Header("Sélection d'Avion")]
-    [Tooltip("Liste des avions disponibles")]
-    public List<AircraftData> availableAircraft = new List<AircraftData>();
+    [Tooltip("Liste des GameObjects avions à afficher (Plane1, Plane2, Plane3)")]
+    public List<GameObject> aircraftDisplayObjects = new List<GameObject>();
     
     [Tooltip("Index de l'avion actuellement sélectionné")]
     private int selectedAircraftIndex = 0;
     
-    [Tooltip("Texte affichant le nom de l'avion")]
-    public Text aircraftNameText;
+    [Tooltip("Code couleur hex de l'avion actuellement sélectionné")]
+    private string selectedAircraftColorCode = "FFFFFF";
     
-    [Tooltip("Texte affichant la description de l'avion")]
-    public Text aircraftDescriptionText;
+    [Header("Dialogue de Confirmation")]
+    [Tooltip("Panel de confirmation de sélection")]
+    public GameObject confirmationDialog;
     
-    [Tooltip("Image de prévisualisation de l'avion")]
-    public Image aircraftPreviewImage;
+    [Tooltip("Texte du message de confirmation")]
+    public Text confirmationText;
+    
+    [Tooltip("Durée d'affichage du dialogue (secondes, 0 = manuel)")]
+    public float confirmationDuration = 2f;
     
     [Header("Sélection de Scénario")]
     [Tooltip("Liste des scénarios disponibles")]
@@ -117,8 +121,34 @@ public class MainMenuController : MonoBehaviour
         // Initialiser les données par défaut si nécessaire
         InitializeDefaultData();
         
+        // Initialiser l'affichage des avions (désactiver tous sauf le premier)
+        InitializeAircraftDisplay();
+        
         // Afficher le panneau principal
         ShowMainPanel();
+    }
+    
+    /// <summary>
+    /// Initialise l'affichage des avions au démarrage
+    /// </summary>
+    void InitializeAircraftDisplay()
+    {
+        // Désactiver tous les avions d'abord
+        foreach (GameObject planeObj in aircraftDisplayObjects)
+        {
+            if (planeObj != null)
+                planeObj.SetActive(false);
+        }
+        
+        // Toujours commencer avec le premier avion (index 0)
+        selectedAircraftIndex = 0;
+        
+        // Activer le premier avion
+        if (aircraftDisplayObjects.Count > 0 && aircraftDisplayObjects[0] != null)
+        {
+            aircraftDisplayObjects[0].SetActive(true);
+            Debug.Log($"MainMenuController: Premier avion activé: {aircraftDisplayObjects[0].name}");
+        }
     }
 
     #region Navigation entre Panneaux
@@ -209,12 +239,17 @@ public class MainMenuController : MonoBehaviour
     /// </summary>
     public void PreviousAircraft()
     {
-        if (availableAircraft.Count == 0) return;
+        if (aircraftDisplayObjects.Count == 0)
+        {
+            Debug.LogWarning("MainMenuController: Aucun avion dans aircraftDisplayObjects!");
+            return;
+        }
         
         selectedAircraftIndex--;
         if (selectedAircraftIndex < 0)
-            selectedAircraftIndex = availableAircraft.Count - 1;
+            selectedAircraftIndex = aircraftDisplayObjects.Count - 1;
         
+        Debug.Log($"MainMenuController: Previous - Index maintenant: {selectedAircraftIndex}");
         UpdateAircraftDisplay();
         PlayButtonSound();
     }
@@ -224,12 +259,17 @@ public class MainMenuController : MonoBehaviour
     /// </summary>
     public void NextAircraft()
     {
-        if (availableAircraft.Count == 0) return;
+        if (aircraftDisplayObjects.Count == 0)
+        {
+            Debug.LogWarning("MainMenuController: Aucun avion dans aircraftDisplayObjects!");
+            return;
+        }
         
         selectedAircraftIndex++;
-        if (selectedAircraftIndex >= availableAircraft.Count)
+        if (selectedAircraftIndex >= aircraftDisplayObjects.Count)
             selectedAircraftIndex = 0;
         
+        Debug.Log($"MainMenuController: Next - Index maintenant: {selectedAircraftIndex}");
         UpdateAircraftDisplay();
         PlayButtonSound();
     }
@@ -239,22 +279,128 @@ public class MainMenuController : MonoBehaviour
     /// </summary>
     void UpdateAircraftDisplay()
     {
-        if (availableAircraft.Count == 0 || selectedAircraftIndex >= availableAircraft.Count)
-            return;
+        Debug.Log($"MainMenuController: UpdateAircraftDisplay - Index: {selectedAircraftIndex}, Nombre d'avions: {aircraftDisplayObjects.Count}");
         
-        AircraftData aircraft = availableAircraft[selectedAircraftIndex];
+        // Masquer tous les avions d'abord
+        foreach (GameObject planeObj in aircraftDisplayObjects)
+        {
+            if (planeObj != null)
+            {
+                planeObj.SetActive(false);
+                Debug.Log($"MainMenuController: Masqué {planeObj.name}");
+            }
+        }
         
-        if (aircraftNameText != null)
-            aircraftNameText.text = aircraft.aircraftName;
-        
-        if (aircraftDescriptionText != null)
-            aircraftDescriptionText.text = aircraft.description;
-        
-        if (aircraftPreviewImage != null && aircraft.previewSprite != null)
-            aircraftPreviewImage.sprite = aircraft.previewSprite;
-        
-        // Sauvegarder la sélection
+        // Afficher l'avion sélectionné
+        if (selectedAircraftIndex >= 0 && selectedAircraftIndex < aircraftDisplayObjects.Count)
+        {
+            GameObject selectedPlane = aircraftDisplayObjects[selectedAircraftIndex];
+            if (selectedPlane != null)
+            {
+                selectedPlane.SetActive(true);
+                
+                // Récupérer le code couleur depuis le Text enfant tagué "color" de l'avion visible
+                // Le Text peut être désactivé pour ne pas être affiché, mais on le récupère quand même
+                Text[] allTexts = selectedPlane.GetComponentsInChildren<Text>(true);
+                Text colorCodeText = null;
+                
+                foreach (Text txt in allTexts)
+                {
+                    if (txt.CompareTag("color"))
+                    {
+                        colorCodeText = txt;
+                        Debug.Log($"MainMenuController: Text 'color' trouvé sur {selectedPlane.name}: {txt.text}");
+                        break;
+                    }
+                }
+                
+                if (colorCodeText != null)
+                {
+                    selectedAircraftColorCode = colorCodeText.text.Trim();
+                    Debug.Log($"MainMenuController: Avion {selectedPlane.name} activé - Code couleur récupéré: {selectedAircraftColorCode}");
+                }
+                else
+                {
+                    Debug.LogWarning($"MainMenuController: Pas de Text avec tag 'color' trouvé sur {selectedPlane.name}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"MainMenuController: L'avion à l'index {selectedAircraftIndex} est null!");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Confirme la sélection de l'avion et sauvegarde le code couleur
+    /// </summary>
+    public void ConfirmAircraftSelection()
+    {
+        // Sauvegarder l'index et le code couleur
         PlayerPrefs.SetInt("SelectedAircraft", selectedAircraftIndex);
+        PlayerPrefs.SetString("AircraftColorCode", selectedAircraftColorCode);
+        PlayerPrefs.Save();
+        
+        Debug.Log($"MainMenuController: Avion {selectedAircraftIndex} sélectionné avec couleur {selectedAircraftColorCode}");
+        
+        // Afficher le dialogue de confirmation
+        ShowConfirmationDialog($"Avion #{selectedAircraftIndex + 1} sélectionné!\nCouleur: #{selectedAircraftColorCode}");
+        
+        PlayButtonSound();
+    }
+    
+    /// <summary>
+    /// Affiche le dialogue de confirmation
+    /// </summary>
+    void ShowConfirmationDialog(string message)
+    {
+        if (confirmationDialog == null)
+        {
+            Debug.LogWarning("MainMenuController: Dialogue de confirmation non assigné");
+            return;
+        }
+        
+        // Déplacer le dialogue à la fin de la hiérarchie pour qu'il soit rendu en dernier (au-dessus)
+        confirmationDialog.transform.SetAsLastSibling();
+        
+        // Mettre à jour le texte
+        if (confirmationText != null)
+        {
+            confirmationText.text = message;
+            // S'assurer que le texte est visible
+            confirmationText.color = Color.white;
+            confirmationText.enabled = true;
+            
+            // Ajuster le RectTransform du texte pour qu'il soit visible
+            RectTransform textRect = confirmationText.GetComponent<RectTransform>();
+            if (textRect != null)
+            {
+                textRect.anchorMin = new Vector2(0, 0);
+                textRect.anchorMax = new Vector2(1, 1);
+                textRect.offsetMin = new Vector2(10, 10); // Padding gauche/bas
+                textRect.offsetMax = new Vector2(-10, -10); // Padding droit/haut
+            }
+        }
+        
+        // Afficher le dialogue
+        confirmationDialog.SetActive(true);
+        
+        // Masquer automatiquement après un délai si configuré
+        if (confirmationDuration > 0)
+        {
+            Invoke("HideConfirmationDialog", confirmationDuration);
+        }
+    }
+    
+    /// <summary>
+    /// Masque le dialogue de confirmation
+    /// </summary>
+    public void HideConfirmationDialog()
+    {
+        if (confirmationDialog != null)
+        {
+            confirmationDialog.SetActive(false);
+        }
     }
 
     #endregion
@@ -579,29 +725,7 @@ public class MainMenuController : MonoBehaviour
     /// </summary>
     void InitializeDefaultData()
     {
-        // Avions par défaut si la liste est vide
-        if (availableAircraft.Count == 0)
-        {
-            availableAircraft.Add(new AircraftData
-            {
-                aircraftName = "Avion de Tourisme",
-                description = "Parfait pour les débutants. Maniable et stable.\n\n" +
-                             "• Vitesse max: 180 km/h\n" +
-                             "• Maniabilité: ★★★★☆\n" +
-                             "• Stabilité: ★★★★★",
-                prefabName = "TouristPlane"
-            });
-            
-            availableAircraft.Add(new AircraftData
-            {
-                aircraftName = "Avion Acrobatique",
-                description = "Pour les pilotes expérimentés. Très maniable.\n\n" +
-                             "• Vitesse max: 250 km/h\n" +
-                             "• Maniabilité: ★★★★★\n" +
-                             "• Stabilité: ★★★☆☆",
-                prefabName = "AcrobaticPlane"
-            });
-        }
+        // Avions par défaut - retiré car on utilise maintenant aircraftDisplayObjects directement
         
         // Scénarios par défaut si la liste est vide
         if (availableScenarios.Count == 0)
