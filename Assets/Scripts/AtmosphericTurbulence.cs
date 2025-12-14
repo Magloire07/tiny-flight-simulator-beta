@@ -21,7 +21,7 @@ public class AtmosphericTurbulence : MonoBehaviour
     [Header("Turbulences")]
     [Tooltip("Intensité de base des turbulences (multiplicateur)")]
     [Range(0f, 10f)]
-    public float baseTurbulenceIntensity = 3f;
+    public float baseTurbulenceIntensity = 1.5f;
     
     [Tooltip("Altitude minimale pour turbulences fortes (mètres)")]
     public float minTurbulenceAltitude = 100f;
@@ -30,10 +30,10 @@ public class AtmosphericTurbulence : MonoBehaviour
     public float maxTurbulenceAltitude = 2000f;
     
     [Tooltip("Force maximale de turbulence appliquée (Newtons)")]
-    public float maxTurbulenceForce = 2000f;
+    public float maxTurbulenceForce = 1000f;
     
     [Tooltip("Couple de turbulence maximal (Newton-mètres)")]
-    public float maxTurbulenceTorque = 800f;
+    public float maxTurbulenceTorque = 400f;
     
     [Tooltip("Vitesse de changement des turbulences (Hz)")]
     [Range(0.1f, 10f)]

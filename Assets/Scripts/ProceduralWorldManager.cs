@@ -45,24 +45,24 @@ public class ProceduralWorldManager : MonoBehaviour
     
     [Tooltip("Distance de vision (en chunks) - génère dans ce rayon")]
     [Range(1, 5)]
-    public int viewDistance = 3;
+    public int viewDistance = 2;
     
     [Tooltip("Distance de déchargement (en chunks) - supprime au-delà")]
     [Range(2, 8)]
-    public int unloadDistance = 3;
+    public int unloadDistance = 2;
     
     [Header("Densité de Génération (Perlin Noise)")]
     [Tooltip("Seuil Perlin pour villes (0-1) - plus bas = plus de villes")]
     [Range(0f, 1f)]
-    public float cityThreshold = 0.051f;
+    public float cityThreshold = 0.2f;
     
     [Tooltip("Seuil Perlin pour lacs (0-1) - plus bas = plus de lacs")]
     [Range(0f, 1f)]
-    public float lakeThreshold = 0.185f;
+    public float lakeThreshold = 0.25f;
     
     [Tooltip("Seuil Perlin pour moulins (0-1) - plus bas = plus de moulins")]
     [Range(0f, 1f)]
-    public float windmillThreshold = 0.19f;
+    public float windmillThreshold = 0.25f;
     
     [Tooltip("Seuil Perlin pour routes (0-1)")]
     [Range(0f, 1f)]
@@ -105,7 +105,10 @@ public class ProceduralWorldManager : MonoBehaviour
     
     [Header("Optimisation")]
     [Tooltip("Vérifier la génération tous les X secondes")]
-    public float updateInterval = 2f;
+    public float updateInterval = 0.5f;
+    
+    [Tooltip("Distance maximale en mètres pour garder un chunk (0 = basé sur unloadDistance uniquement)")]
+    public float maxChunkDistanceMeters = 5000f;
     
     [Tooltip("Graine aléatoire globale (0 = aléatoire)")]
     public int globalSeed = 0;
@@ -230,9 +233,21 @@ public class ProceduralWorldManager : MonoBehaviour
         foreach (var kvp in loadedChunks)
         {
             Vector2Int chunkCoord = kvp.Key;
-            float distance = Vector2Int.Distance(chunkCoord, currentChunkCoord);
+            float chunkDistance = Vector2Int.Distance(chunkCoord, currentChunkCoord);
             
-            if (distance > unloadDistance)
+            // Vérifier la distance en chunks
+            bool tooFarChunks = chunkDistance > unloadDistance;
+            
+            // Vérifier aussi la distance réelle en mètres si configuré
+            bool tooFarMeters = false;
+            if (maxChunkDistanceMeters > 0)
+            {
+                Vector3 chunkWorldPos = new Vector3(chunkCoord.x * chunkSize, 0f, chunkCoord.y * chunkSize);
+                float realDistance = Vector3.Distance(playerPlane.position, chunkWorldPos);
+                tooFarMeters = realDistance > maxChunkDistanceMeters;
+            }
+            
+            if (tooFarChunks || tooFarMeters)
             {
                 chunksToUnload.Add(chunkCoord);
             }

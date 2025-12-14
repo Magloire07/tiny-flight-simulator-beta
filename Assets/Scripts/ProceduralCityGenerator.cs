@@ -8,10 +8,10 @@ public class ProceduralCityGenerator : MonoBehaviour
 {
     [Header("Dimensions de la Ville")]
     [Tooltip("Nombre de blocs en largeur (axe X)")]
-    public int cityWidth = 10;
+    public int cityWidth = 5;
     
     [Tooltip("Nombre de blocs en longueur (axe Z)")]
-    public int cityLength = 10;
+    public int cityLength = 5;
     
     [Tooltip("Taille d'un bloc de ville (en mètres)")]
     public float blockSize = 100f;
@@ -63,10 +63,10 @@ public class ProceduralCityGenerator : MonoBehaviour
     public GameObject[] streetTreePrefabs;
     
     [Tooltip("Espacement entre les panneaux (en mètres)")]
-    public float signSpacing = 15f;
+    public float signSpacing = 50f;
     
     [Tooltip("Espacement entre les arbres (en mètres)")]
-    public float treeSpacing = 8f;
+    public float treeSpacing = 40f;
     
     [Tooltip("Distance du bord de la route pour les arbres (en mètres)")]
     public float treeOffset = 6f;
@@ -97,10 +97,16 @@ public class ProceduralCityGenerator : MonoBehaviour
     
     [Header("Optimisation")]
     [Tooltip("Combiner les meshes pour optimiser les performances")]
-    public bool combineMeshes = false;
+    public bool combineMeshes = true;
     
     [Tooltip("Distance de culling des bâtiments (0 = désactivé)")]
-    public float cullingDistance = 2000f;
+    public float cullingDistance = 1500f;
+    
+    [Tooltip("Ne pas générer les arbres et panneaux (gain de performance majeur)")]
+    public bool disableDecorations = true;
+    
+    [Tooltip("Utiliser des bâtiments simples uniquement (pas de variation)")]
+    public bool simpleBuildingsOnly = false;
     
     [Header("Connexion Routes Campagne")]
     [Tooltip("Créer un point de connexion pour les routes de campagne")]
@@ -171,8 +177,11 @@ public class ProceduralCityGenerator : MonoBehaviour
         // Générer les routes
         GenerateRoads();
         
-        // Générer les panneaux et arbres en bordure de routes
-        GenerateRoadsideElements();
+        // Générer les panneaux et arbres en bordure de routes (seulement si activé)
+        if (!disableDecorations)
+        {
+            GenerateRoadsideElements();
+        }
         
         // Générer les bâtiments
         GenerateBuildings();
@@ -481,8 +490,8 @@ public class ProceduralCityGenerator : MonoBehaviour
                 else
                 {
                     // Placer les bâtiments de manière hétérogène avec chevauchements minimes
-                    int buildingsInBlock = random.Next(50, 80); // Maximum: 50-80 bâtiments par bloc
-                    float minBuildingSpacing = 5f; // Distance minimale entre bâtiments
+                    int buildingsInBlock = random.Next(12, 20); // Maximum: 12-20 bâtiments par bloc
+                    float minBuildingSpacing = 15f; // Distance minimale entre bâtiments
                     List<Vector3> placedPositions = new List<Vector3>();
                     
                     int attempts = 0;
