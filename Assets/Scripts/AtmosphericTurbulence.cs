@@ -131,7 +131,7 @@ public class AtmosphericTurbulence : MonoBehaviour
         
         if (showDebugInfo && Time.frameCount % 60 == 0)
         {
-            Debug.Log($"Altitude: {currentAltitude:F0}m, Densité: {plane.aero.airDensity:F3} kg/m³ ({densityRatio * 100:F1}%)");
+            // Debug.Log($"Altitude: {currentAltitude:F0}m, Densité: {plane.aero.airDensity:F3} kg/m³ ({densityRatio * 100:F1}%)");
         }
     }
     
@@ -207,7 +207,7 @@ public class AtmosphericTurbulence : MonoBehaviour
         
         if (showDebugInfo && Time.frameCount % 60 == 0)
         {
-            Debug.Log($"Turbulence - Alt:{currentAltitude:F0}m, AltFactor:{altitudeFactor:F2}, Weather:{weatherIntensity:F2}, Total:{totalIntensity:F2}");
+            // Debug.Log($"Turbulence - Alt:{currentAltitude:F0}m, AltFactor:{altitudeFactor:F2}, Weather:{weatherIntensity:F2}, Total:{totalIntensity:F2}");
         }
     }
     

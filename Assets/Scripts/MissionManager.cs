@@ -54,14 +54,34 @@ public class MissionManager : MonoBehaviour
     [Tooltip("Taille de l'image effrayante (largeur en pixels)")]
     public float scaryImageSize = 200f;
     
+    [Header("Mission 3 - Fin de Mission")]
+    [Tooltip("Durée de Mission 3 avant la fin (secondes) - 600s = 10 minutes")]
+    public float mission3Duration = 600f;
+    
+    [Tooltip("Son d'applaudissement à la fin de Mission 3")]
+    public AudioClip applauseSound;
+    
+    [Tooltip("Volume du son d'applaudissement (0-1)")]
+    [Range(0f, 1f)]
+    public float applauseSoundVolume = 0.7f;
+    
+    [Tooltip("Météo après la fin de Mission 3 (beau temps)")]
+    public float mission3EndWeather = 0f;
+    
+    [Tooltip("Heure après la fin de Mission 3 (12h = midi)")]
+    public float mission3EndTime = 12f;
+    
     // État de la mission
     private int selectedMissionIndex = -1;
     private bool isMissionLocked = false;
     private AudioSource halloweenAudioSource1;
     private AudioSource halloweenAudioSource2;
+    private AudioSource applauseAudioSource;
     private bool isMission3Active = false;
     private Canvas scaryImageCanvas;
     private GameObject scaryImageObject;
+    private Coroutine halloweenSoundsCoroutine;
+    private Coroutine scaryImageCoroutine;
     
     void Start()
     {
@@ -89,6 +109,14 @@ public class MissionManager : MonoBehaviour
         halloweenAudioSource2.spatialBlend = 0f; // Son 2D (non spatialisé)
         halloweenAudioSource2.volume = halloweenSoundVolume;
         halloweenAudioSource2.priority = 128; // Priorité moyenne
+        
+        // Créer l'AudioSource pour l'applaudissement
+        applauseAudioSource = gameObject.AddComponent<AudioSource>();
+        applauseAudioSource.loop = false;
+        applauseAudioSource.playOnAwake = false;
+        applauseAudioSource.spatialBlend = 0f; // Son 2D (non spatialisé)
+        applauseAudioSource.volume = applauseSoundVolume;
+        applauseAudioSource.priority = 100; // Haute priorité
         
         // Appliquer les paramètres de la mission
         ApplyMissionSettings();
@@ -145,15 +173,18 @@ public class MissionManager : MonoBehaviour
             // Démarrer les sons d'Halloween
             if (halloweenSound1 != null || halloweenSound2 != null)
             {
-                StartCoroutine(PlayHalloweenSoundsRoutine());
+                halloweenSoundsCoroutine = StartCoroutine(PlayHalloweenSoundsRoutine());
             }
             
             // Démarrer l'image effrayante
             if (scaryImage != null)
             {
                 CreateScaryImageCanvas();
-                StartCoroutine(ShowScaryImageRoutine());
+                scaryImageCoroutine = StartCoroutine(ShowScaryImageRoutine());
             }
+            
+            // Démarrer le timer de fin de Mission 3
+            StartCoroutine(EndMission3After10Minutes());
         }
         else
         {
@@ -372,5 +403,81 @@ public class MissionManager : MonoBehaviour
         scaryImageObject.SetActive(false);
         
         Debug.Log($"MissionManager: Image effrayante défilée (direction: {direction})");
+    }
+    
+    /// <summary>
+    /// Termine Mission 3 après 10 minutes de jeu
+    /// </summary>
+    IEnumerator EndMission3After10Minutes()
+    {
+        Debug.Log($"MissionManager: Timer de Mission 3 démarré - Fin dans {mission3Duration} secondes");
+        
+        // Attendre 10 minutes (600 secondes)
+        yield return new WaitForSeconds(mission3Duration);
+        
+        Debug.Log("MissionManager: Fin de Mission 3 - Arrêt des effets d'horreur");
+        
+        // Désactiver Mission 3
+        isMission3Active = false;
+        
+        // Arrêter les sons d'Halloween
+        if (halloweenSoundsCoroutine != null)
+        {
+            StopCoroutine(halloweenSoundsCoroutine);
+            halloweenSoundsCoroutine = null;
+        }
+        
+        // Arrêter les AudioSources d'Halloween
+        if (halloweenAudioSource1 != null && halloweenAudioSource1.isPlaying)
+            halloweenAudioSource1.Stop();
+        
+        if (halloweenAudioSource2 != null && halloweenAudioSource2.isPlaying)
+            halloweenAudioSource2.Stop();
+        
+        // Arrêter l'image effrayante
+        if (scaryImageCoroutine != null)
+        {
+            StopCoroutine(scaryImageCoroutine);
+            scaryImageCoroutine = null;
+        }
+        
+        // Cacher l'image si elle est visible
+        if (scaryImageObject != null && scaryImageObject.activeSelf)
+            scaryImageObject.SetActive(false);
+        
+        // Changer la météo à beau temps
+        if (weatherSystem != null)
+        {
+            weatherSystem.SetWeatherIntensity(mission3EndWeather);
+            Debug.Log($"MissionManager: Météo changée à {mission3EndWeather} (beau temps)");
+        }
+        
+        // Changer l'heure à midi
+        if (gameMenuController != null)
+        {
+            gameMenuController.SetTimeValue(mission3EndTime);
+            Debug.Log($"MissionManager: Heure changée à {mission3EndTime}h (midi)");
+        }
+        
+        // Déverrouiller les sliders
+        if (gameMenuController != null)
+        {
+            gameMenuController.SetWeatherSliderLocked(false);
+            gameMenuController.SetTimeSliderLocked(false);
+            Debug.Log("MissionManager: Sliders déverrouillés");
+        }
+        
+        // Attendre un court instant avant de jouer l'applaudissement
+        yield return new WaitForSeconds(1f);
+        
+        // Jouer le son d'applaudissement
+        if (applauseSound != null && applauseAudioSource != null)
+        {
+            applauseAudioSource.volume = applauseSoundVolume;
+            applauseAudioSource.PlayOneShot(applauseSound);
+            Debug.Log("MissionManager: Son d'applaudissement joué - Mission 3 terminée!");
+        }
+        
+        isMissionLocked = false;
     }
 }

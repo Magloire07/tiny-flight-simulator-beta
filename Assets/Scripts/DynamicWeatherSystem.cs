@@ -158,13 +158,9 @@ public class DynamicWeatherSystem : MonoBehaviour
         RenderSettings.fogColor = fogColor;
         RenderSettings.fogMode = FogMode.Linear; // Mode linéaire pour distance start/end
         
-        // Activer le MissionManager s'il existe et est désactivé
-        MissionManager missionManager = FindObjectOfType<MissionManager>(true); // true pour inclure les objets inactifs
-        if (missionManager != null && !missionManager.gameObject.activeInHierarchy)
-        {
-            missionManager.gameObject.SetActive(true);
-            Debug.Log("DynamicWeatherSystem: MissionManager activé");
-        }
+        // Activer le MissionManager UNIQUEMENT si le jeu est lancé depuis le MainMenu
+        // Utiliser une coroutine avec délai pour éviter les erreurs d'initialisation
+        StartCoroutine(ActivateMissionManagerDelayed());
         
         // Calculer le prochain tonnerre
         ScheduleNextThunder();
@@ -494,5 +490,47 @@ public class DynamicWeatherSystem : MonoBehaviour
         
         var emission = stormParticles.emission;
         emission.rateOverTime = 10f;
+    }
+    
+    /// <summary>
+    /// Active le MissionManager avec un délai pour éviter les erreurs d'initialisation
+    /// </summary>
+    System.Collections.IEnumerator ActivateMissionManagerDelayed()
+    {
+        // Attendre que la scène soit complètement chargée
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForSeconds(0.1f);
+        
+        int fromMainMenu = PlayerPrefs.GetInt("FromMainMenu", 0);
+        
+        if (fromMainMenu == 1)
+        {
+            // Effacer le flag immédiatement pour ne pas qu'il persiste
+            PlayerPrefs.DeleteKey("FromMainMenu");
+            PlayerPrefs.Save();
+            
+            // Vérifier qu'une mission a été sélectionnée
+            int selectedMission = PlayerPrefs.GetInt("SelectedMission", -1);
+            string selectedMissionName = PlayerPrefs.GetString("SelectedMissionName", "");
+            
+            if (selectedMission >= 0 || !string.IsNullOrEmpty(selectedMissionName))
+            {
+                // Activer le MissionManager
+                MissionManager missionManager = FindObjectOfType<MissionManager>(true);
+                if (missionManager != null && !missionManager.gameObject.activeInHierarchy)
+                {
+                    missionManager.gameObject.SetActive(true);
+                    Debug.Log($"DynamicWeatherSystem: MissionManager activé pour mission: {selectedMissionName} (index: {selectedMission})");
+                }
+            }
+            else
+            {
+                Debug.Log("DynamicWeatherSystem: Lancé depuis MainMenu mais aucune mission sélectionnée");
+            }
+        }
+        else
+        {
+            Debug.Log("DynamicWeatherSystem: Scène lancée directement (pas depuis MainMenu), MissionManager reste désactivé");
+        }
     }
 }

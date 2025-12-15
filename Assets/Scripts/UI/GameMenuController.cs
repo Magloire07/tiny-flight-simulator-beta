@@ -132,8 +132,15 @@ public class GameMenuController : MonoBehaviour
         
         if (toggleViewButton != null)
         {
+            Debug.Log("GameMenuController: toggleViewButton trouvé, ajout du listener OnToggleViewClicked");
+            // Supprimer tous les listeners existants pour éviter les doublons
+            toggleViewButton.onClick.RemoveAllListeners();
             toggleViewButton.onClick.AddListener(OnToggleViewClicked);
             UpdateViewButtonText();
+        }
+        else
+        {
+            Debug.LogWarning("GameMenuController: toggleViewButton est NULL! Vérifiez l'assignation dans l'Inspector.");
         }
         
         if (toggleInputButton != null)
@@ -375,18 +382,31 @@ public class GameMenuController : MonoBehaviour
     /// </summary>
     public void OnToggleViewClicked()
     {
-        Debug.Log("OnToggleViewClicked appelé!");
+        Debug.Log("=== OnToggleViewClicked appelé! ===");
         
         if (cameraViewSwitcher != null)
         {
-            Debug.Log("CameraViewSwitcher trouvé, appel de ToggleView()");
+            Debug.Log($"AVANT Toggle - isCockpitView: {cameraViewSwitcher.isCockpitView}");
             cameraViewSwitcher.ToggleView();
-            UpdateViewButtonText();
+            Debug.Log($"APRÈS Toggle - isCockpitView: {cameraViewSwitcher.isCockpitView}");
+            
+            // Forcer la mise à jour immédiate du texte
+            StartCoroutine(UpdateViewButtonTextDelayed());
         }
         else
         {
             Debug.LogWarning("CameraViewSwitcher est null! Vérifiez la référence dans l'Inspector.");
         }
+    }
+    
+    /// <summary>
+    /// Met à jour le texte du bouton vue avec un léger délai
+    /// </summary>
+    System.Collections.IEnumerator UpdateViewButtonTextDelayed()
+    {
+        yield return new WaitForEndOfFrame();
+        UpdateViewButtonText();
+        Debug.Log($"Bouton mis à jour: {toggleViewButtonText?.text}");
     }
     
     /// <summary>

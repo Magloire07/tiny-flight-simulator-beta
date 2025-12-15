@@ -314,7 +314,7 @@ public class AirportMapUI : MonoBehaviour
         {
             float distance = Vector3.Distance(playerPlane.position, referenceAirport.position);
             nearbyAirports.Add(referenceAirport); // Toujours afficher l'aéroport de référence
-            Debug.Log($"AirportMapUI: Aéroport de référence à {distance:F0}m");
+            // Debug.Log($"AirportMapUI: Aéroport de référence à {distance:F0}m");
         }
         
         // Chercher tous les aéroports générés dans la scène
@@ -336,7 +336,7 @@ public class AirportMapUI : MonoBehaviour
             }
         }
         
-        Debug.Log($"AirportMapUI: {airportsFound} aéroports trouvés dans un rayon de {detectionRadius/1000f:F1}km");
+        // Debug.Log($"AirportMapUI: {airportsFound} aéroports trouvés dans un rayon de {detectionRadius/1000f:F1}km");
         
         // Supprimer les marqueurs obsolètes
         List<GameObject> markersToRemove = new List<GameObject>();

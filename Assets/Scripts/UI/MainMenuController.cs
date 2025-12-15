@@ -438,6 +438,9 @@ public class MainMenuController : MonoBehaviour
         
         // Sauvegarder la sélection d'avion
         PlayerPrefs.SetInt("SelectedAircraft", selectedAircraftIndex);
+        
+        // Marquer que le jeu est lancé depuis le MainMenu
+        PlayerPrefs.SetInt("FromMainMenu", 1);
         PlayerPrefs.Save();
         
         // Charger la scène Flight Demo
@@ -450,6 +453,11 @@ public class MainMenuController : MonoBehaviour
     public static void ReturnToMainMenu()
     {
         Time.timeScale = 1f; // S'assurer que le temps n'est pas en pause
+        
+        // Nettoyer le flag FromMainMenu pour éviter des problèmes
+        PlayerPrefs.DeleteKey("FromMainMenu");
+        PlayerPrefs.Save();
+        
         SceneManager.LoadScene("MainMenu");
     }
 

@@ -94,7 +94,6 @@ public class CameraViewSwitcher : MonoBehaviour
     private AudioSource audioSource;
     private Vector3 targetPosition;
     private Quaternion targetRotation;
-    private bool useMouseFlightInExternalView = true;
     private float externalViewFOV; // Sauvegarde du FOV de la vue externe
     private float cockpitYaw = 0f; // Rotation horizontale de la vue cockpit
     private float cockpitPitch = 0f; // Rotation verticale de la vue cockpit
@@ -240,19 +239,29 @@ public class CameraViewSwitcher : MonoBehaviour
     /// </summary>
     public void ToggleView()
     {
+        Debug.Log($">>> ToggleView() appelé - isCockpitView AVANT: {isCockpitView}");
         isCockpitView = !isCockpitView;
+        Debug.Log($">>> ToggleView() - isCockpitView APRÈS toggle: {isCockpitView}");
         
         if (isCockpitView)
         {
-            SetCockpitView(false);
+            Debug.Log(">>> Appel SetCockpitView(true)");
+            SetCockpitView(true); // Changement instantané
             PlaySwitchBeep(true);
-            Debug.Log("Vue Cockpit activée");
+            Debug.Log(">>> Vue Cockpit activée (instant)");
         }
         else
         {
-            SetExternalView(false);
+            Debug.Log(">>> Appel SetExternalView(true)");
+            SetExternalView(true); // Changement instantané
             PlaySwitchBeep(false);
-            Debug.Log("Vue Extérieure activée");
+            Debug.Log(">>> Vue Extérieure activée (instant)");
+        }
+        
+        // Forcer une mise à jour immédiate
+        if (viewCamera != null)
+        {
+            Debug.Log($">>> Caméra position: {viewCamera.transform.position}, rotation: {viewCamera.transform.rotation.eulerAngles}");
         }
     }
     
@@ -261,6 +270,8 @@ public class CameraViewSwitcher : MonoBehaviour
     /// </summary>
     void PlaySwitchBeep(bool toCockpit)
     {
+        Debug.Log($"*** PlaySwitchBeep appelé! toCockpit={toCockpit}, Time={Time.time}, StackTrace={System.Environment.StackTrace}");
+        
         if (audioSource == null) return;
         
         if (switchViewBeep != null)

@@ -43,6 +43,15 @@ public class AircraftColorApplier : MonoBehaviour
     /// </summary>
     public void ApplySavedColor()
     {
+        // Vérifier si le jeu a été lancé depuis le MainMenu
+        int fromMainMenu = PlayerPrefs.GetInt("FromMainMenu", 0);
+        
+        if (fromMainMenu != 1)
+        {
+            Debug.Log("AircraftColorApplier: Scène lancée directement, couleur de l'avion inchangée");
+            return;
+        }
+        
         // Récupérer le code couleur sauvegardé
         string colorCode = PlayerPrefs.GetString("AircraftColorCode", "FFFFFF");
         
@@ -52,7 +61,7 @@ public class AircraftColorApplier : MonoBehaviour
         // Appliquer la couleur au material
         ApplyColor(newColor);
         
-        Debug.Log($"AircraftColorApplier: Couleur appliquée: #{colorCode} = {newColor}");
+        Debug.Log($"AircraftColorApplier: Couleur appliquée depuis MainMenu: #{colorCode} = {newColor}");
     }
     
     /// <summary>

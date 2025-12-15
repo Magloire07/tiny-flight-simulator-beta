@@ -152,30 +152,14 @@ public class ProceduralWorldManager : MonoBehaviour
         random = new System.Random(globalSeed);
         Debug.Log($"ProceduralWorldManager: Graine globale = {globalSeed}");
         
-        // Utiliser l'aéroport de référence ou générer un nouveau
+        // L'avion garde sa position initiale de la scène Unity
+        // Le WorldManager ne déplace plus l'avion
         if (playerPlane != null)
         {
-            if (referenceAirport != null)
-            {
-                // Utiliser l'aéroport existant comme référence
-                PlacePlayerOnReferenceAirport();
-                
-                // Marquer les chunks autour de la position de la piste (où l'avion est placé) comme protégés
-                Vector3 runwayPosition = referenceAirport.transform.position + planeStartOffset;
-                Vector2Int runwayChunk = GetChunkCoord(runwayPosition);
-                ProtectChunksAroundPoint(runwayChunk, airportProtectionRadius);
-                Debug.Log($"ProceduralWorldManager: Zone de {airportProtectionRadius} chunks autour de la piste protégée (position: {runwayPosition})");
-            }
-            else if (generateStartAirport && airportPrefab != null)
-            {
-                // Générer un nouvel aéroport
-                GenerateStartAirport();
-                
-                // Marquer les chunks autour de la piste (centre + offset) comme protégés
-                Vector3 runwayPosition = Vector3.zero + planeStartOffset;
-                Vector2Int startChunk = GetChunkCoord(runwayPosition);
-                ProtectChunksAroundPoint(startChunk, airportProtectionRadius);
-            }
+            // Protéger la zone autour de la position actuelle de l'avion
+            Vector2Int planeChunk = GetChunkCoord(playerPlane.position);
+            ProtectChunksAroundPoint(planeChunk, airportProtectionRadius);
+            Debug.Log($"ProceduralWorldManager: Zone de {airportProtectionRadius} chunks autour de l'avion protégée (position: {playerPlane.position})");
         }
         
         // Première génération
@@ -544,18 +528,46 @@ public class ProceduralWorldManager : MonoBehaviour
         
         // Placer l'avion sur la piste
         Vector3 planePosition = startPosition + planeStartOffset;
-        playerPlane.position = planePosition;
-        playerPlane.rotation = Quaternion.Euler(0f, 0f, 0f); // Orienté vers le nord
         
-        // Réinitialiser la vélocité si c'est un Rigidbody
+        // Récupérer le Rigidbody
         Rigidbody planeRb = playerPlane.GetComponent<Rigidbody>();
+        
+        // Désactiver temporairement le Rigidbody pendant le positionnement
+        bool wasKinematic = false;
         if (planeRb != null)
         {
-            planeRb.velocity = Vector3.zero;
-            planeRb.angularVelocity = Vector3.zero;
+            // Réinitialiser les vélocités AVANT de passer en kinematic
+            if (!planeRb.isKinematic)
+            {
+                planeRb.velocity = Vector3.zero;
+                planeRb.angularVelocity = Vector3.zero;
+            }
+            
+            wasKinematic = planeRb.isKinematic;
+            planeRb.isKinematic = true;
         }
         
-        Debug.Log($"ProceduralWorldManager: Aéroport de départ créé, avion placé à {planePosition}");
+        // Appliquer position (garder la rotation d'origine de l'avion)
+        playerPlane.position = planePosition;
+        
+        // Réactiver le Rigidbody après un court délai
+        if (planeRb != null)
+        {
+            StartCoroutine(ReactivateRigidbodyAfterDelay(planeRb, wasKinematic));
+        }
+        
+        // Forcer la recapture du pitch initial par PlaneGroundStability
+        PlaneGroundStability groundStability = playerPlane.GetComponent<PlaneGroundStability>();
+        if (groundStability == null)
+        {
+            groundStability = playerPlane.GetComponentInChildren<PlaneGroundStability>();
+        }
+        if (groundStability != null)
+        {
+            StartCoroutine(RecapturePitchAfterPlacement(groundStability));
+        }
+        
+        Debug.Log($"ProceduralWorldManager: Aéroport de départ créé, avion placé à {planePosition} (rotation d'origine conservée)");
     }
 
     /// <summary>
@@ -568,20 +580,84 @@ public class ProceduralWorldManager : MonoBehaviour
         
         // Placer l'avion sur la piste avec l'offset
         Vector3 planePosition = airportPosition + planeStartOffset;
-        playerPlane.position = planePosition;
         
-        // Aligner l'avion avec la rotation de l'aéroport
-        playerPlane.rotation = referenceAirport.transform.rotation;
-        
-        // Réinitialiser la vélocité si c'est un Rigidbody
+        // Récupérer le Rigidbody
         Rigidbody planeRb = playerPlane.GetComponent<Rigidbody>();
+        
+        // Désactiver temporairement le Rigidbody pendant le positionnement
+        bool wasKinematic = false;
         if (planeRb != null)
         {
-            planeRb.velocity = Vector3.zero;
-            planeRb.angularVelocity = Vector3.zero;
+            // Réinitialiser les vélocités AVANT de passer en kinematic
+            if (!planeRb.isKinematic)
+            {
+                planeRb.velocity = Vector3.zero;
+                planeRb.angularVelocity = Vector3.zero;
+            }
+            
+            wasKinematic = planeRb.isKinematic;
+            planeRb.isKinematic = true;
         }
         
-        Debug.Log($"ProceduralWorldManager: Avion placé sur l'aéroport de référence à {planePosition}");
+        // Appliquer position (garder la rotation d'origine de l'avion)
+        playerPlane.position = planePosition;
+        
+        // Réactiver le Rigidbody après un court délai
+        if (planeRb != null)
+        {
+            StartCoroutine(ReactivateRigidbodyAfterDelay(planeRb, wasKinematic));
+        }
+        
+        // Forcer la recapture du pitch initial par PlaneGroundStability
+        PlaneGroundStability groundStability = playerPlane.GetComponent<PlaneGroundStability>();
+        if (groundStability == null)
+        {
+            groundStability = playerPlane.GetComponentInChildren<PlaneGroundStability>();
+        }
+        if (groundStability != null)
+        {
+            StartCoroutine(RecapturePitchAfterPlacement(groundStability));
+        }
+        
+        Debug.Log($"ProceduralWorldManager: Avion placé sur l'aéroport de référence à {planePosition} (rotation d'origine conservée)");
+    }
+    
+    /// <summary>
+    /// Réactive le Rigidbody après un délai pour éviter les problèmes de physics au démarrage
+    /// </summary>
+    System.Collections.IEnumerator ReactivateRigidbodyAfterDelay(Rigidbody rb, bool originalKinematicState)
+    {
+        // Attendre 2 frames pour que tout soit initialisé
+        yield return null;
+        yield return null;
+        
+        if (rb != null)
+        {
+            rb.isKinematic = originalKinematicState;
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            Debug.Log("ProceduralWorldManager: Rigidbody de l'avion réactivé");
+        }
+    }
+    
+    /// <summary>
+    /// Force PlaneGroundStability à recapturer le pitch initial après placement
+    /// </summary>
+    System.Collections.IEnumerator RecapturePitchAfterPlacement(PlaneGroundStability groundStability)
+    {
+        // Attendre que tout soit stable
+        yield return new WaitForSeconds(0.2f);
+        
+        // Accéder aux champs privés via réflexion pour forcer la recapture
+        var fieldInitialPitchCaptured = typeof(PlaneGroundStability).GetField("initialPitchCaptured", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        if (fieldInitialPitchCaptured != null)
+        {
+            // Réinitialiser pour forcer une nouvelle capture
+            fieldInitialPitchCaptured.SetValue(groundStability, false);
+            Debug.Log("ProceduralWorldManager: PlaneGroundStability réinitialisé pour recapturer le pitch initial");
+        }
     }
 
     /// <summary>
