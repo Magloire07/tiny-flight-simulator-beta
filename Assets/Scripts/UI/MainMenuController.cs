@@ -15,14 +15,14 @@ public class MainMenuController : MonoBehaviour
     [Tooltip("Panneau de sélection d'avion")]
     public GameObject aircraftSelectionPanel;
     
-    [Tooltip("Panneau de sélection de scénario")]
-    public GameObject scenarioSelectionPanel;
-    
     [Tooltip("Panneau des paramètres")]
     public GameObject settingsPanel;
     
     [Tooltip("Panneau du didacticiel")]
     public GameObject tutorialPanel;
+    
+    [Tooltip("Panneau des missions")]
+    public GameObject missionPanel;
     
     [Header("Sélection d'Avion")]
     [Tooltip("Liste des GameObjects avions à afficher (Plane1, Plane2, Plane3)")]
@@ -44,21 +44,12 @@ public class MainMenuController : MonoBehaviour
     [Tooltip("Durée d'affichage du dialogue (secondes, 0 = manuel)")]
     public float confirmationDuration = 2f;
     
-    [Header("Sélection de Scénario")]
-    [Tooltip("Liste des scénarios disponibles")]
-    public List<ScenarioData> availableScenarios = new List<ScenarioData>();
+    [Header("Sélection de Mission")]
+    [Tooltip("Index de la mission actuellement sélectionnée")]
+    private int selectedMissionIndex = 0;
     
-    [Tooltip("Index du scénario actuellement sélectionné")]
-    private int selectedScenarioIndex = 0;
-    
-    [Tooltip("Texte affichant le nom du scénario")]
-    public Text scenarioNameText;
-    
-    [Tooltip("Texte affichant la description du scénario")]
-    public Text scenarioDescriptionText;
-    
-    [Tooltip("Image de prévisualisation du scénario")]
-    public Image scenarioPreviewImage;
+    [Tooltip("GameObjects des missions (Mission1, Mission2, Mission3)")]
+    public List<GameObject> missionObjects = new List<GameObject>();
     
     [Header("Paramètres")]
     [Tooltip("Slider pour le volume audio")]
@@ -179,20 +170,6 @@ public class MainMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// Affiche le panneau de sélection de scénario
-    /// </summary>
-    public void ShowScenarioSelectionPanel()
-    {
-        HideAllPanels();
-        if (scenarioSelectionPanel != null)
-        {
-            scenarioSelectionPanel.SetActive(true);
-            UpdateScenarioDisplay();
-        }
-        PlayButtonSound();
-    }
-
-    /// <summary>
     /// Affiche le panneau des paramètres
     /// </summary>
     public void ShowSettingsPanel()
@@ -219,15 +196,29 @@ public class MainMenuController : MonoBehaviour
     }
 
     /// <summary>
+    /// Affiche le panneau de sélection de missions
+    /// </summary>
+    public void ShowMissionPanel()
+    {
+        HideAllPanels();
+        if (missionPanel != null)
+        {
+            missionPanel.SetActive(true);
+            UpdateMissionDisplay();
+        }
+        PlayButtonSound();
+    }
+
+    /// <summary>
     /// Cache tous les panneaux
     /// </summary>
     void HideAllPanels()
     {
         if (mainPanel != null) mainPanel.SetActive(false);
         if (aircraftSelectionPanel != null) aircraftSelectionPanel.SetActive(false);
-        if (scenarioSelectionPanel != null) scenarioSelectionPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (tutorialPanel != null) tutorialPanel.SetActive(false);
+        if (missionPanel != null) missionPanel.SetActive(false);
     }
 
     #endregion
@@ -405,60 +396,7 @@ public class MainMenuController : MonoBehaviour
 
     #endregion
 
-    #region Sélection de Scénario
-
-    /// <summary>
-    /// Sélectionne le scénario précédent
-    /// </summary>
-    public void PreviousScenario()
-    {
-        if (availableScenarios.Count == 0) return;
-        
-        selectedScenarioIndex--;
-        if (selectedScenarioIndex < 0)
-            selectedScenarioIndex = availableScenarios.Count - 1;
-        
-        UpdateScenarioDisplay();
-        PlayButtonSound();
-    }
-
-    /// <summary>
-    /// Sélectionne le scénario suivant
-    /// </summary>
-    public void NextScenario()
-    {
-        if (availableScenarios.Count == 0) return;
-        
-        selectedScenarioIndex++;
-        if (selectedScenarioIndex >= availableScenarios.Count)
-            selectedScenarioIndex = 0;
-        
-        UpdateScenarioDisplay();
-        PlayButtonSound();
-    }
-
-    /// <summary>
-    /// Met à jour l'affichage du scénario sélectionné
-    /// </summary>
-    void UpdateScenarioDisplay()
-    {
-        if (availableScenarios.Count == 0 || selectedScenarioIndex >= availableScenarios.Count)
-            return;
-        
-        ScenarioData scenario = availableScenarios[selectedScenarioIndex];
-        
-        if (scenarioNameText != null)
-            scenarioNameText.text = scenario.scenarioName;
-        
-        if (scenarioDescriptionText != null)
-            scenarioDescriptionText.text = scenario.description;
-        
-        if (scenarioPreviewImage != null && scenario.previewSprite != null)
-            scenarioPreviewImage.sprite = scenario.previewSprite;
-        
-        // Sauvegarder la sélection
-        PlayerPrefs.SetInt("SelectedScenario", selectedScenarioIndex);
-    }
+    #region Lancement du Jeu
 
     /// <summary>
     /// Lance le jeu avec les sélections actuelles
@@ -467,45 +405,12 @@ public class MainMenuController : MonoBehaviour
     {
         PlayButtonSound();
         
-        // Sauvegarder les sélections
+        // Sauvegarder la sélection d'avion
         PlayerPrefs.SetInt("SelectedAircraft", selectedAircraftIndex);
-        PlayerPrefs.SetInt("SelectedScenario", selectedScenarioIndex);
         PlayerPrefs.Save();
         
         // Charger la scène Flight Demo
         SceneManager.LoadScene("Flight Demo");
-    }
-    
-    /// <summary>
-    /// Lance le jeu avec un scénario spécifique
-    /// </summary>
-    public void StartGameWithScenario()
-    {
-        PlayButtonSound();
-        
-        // Sauvegarder les sélections
-        PlayerPrefs.SetInt("SelectedAircraft", selectedAircraftIndex);
-        PlayerPrefs.SetInt("SelectedScenario", selectedScenarioIndex);
-        PlayerPrefs.Save();
-        
-        // Charger la scène correspondant au scénario
-        if (availableScenarios.Count > 0 && selectedScenarioIndex < availableScenarios.Count)
-        {
-            string sceneName = availableScenarios[selectedScenarioIndex].sceneName;
-            if (!string.IsNullOrEmpty(sceneName))
-            {
-                SceneManager.LoadScene(sceneName);
-            }
-            else
-            {
-                // Par défaut, charger Flight Demo
-                SceneManager.LoadScene("Flight Demo");
-            }
-        }
-        else
-        {
-            SceneManager.LoadScene("Flight Demo");
-        }
     }
     
     /// <summary>
@@ -641,7 +546,6 @@ public class MainMenuController : MonoBehaviour
         
         // Sélections
         selectedAircraftIndex = PlayerPrefs.GetInt("SelectedAircraft", 0);
-        selectedScenarioIndex = PlayerPrefs.GetInt("SelectedScenario", 0);
     }
 
     #endregion
@@ -725,32 +629,6 @@ public class MainMenuController : MonoBehaviour
     /// </summary>
     void InitializeDefaultData()
     {
-        // Avions par défaut - retiré car on utilise maintenant aircraftDisplayObjects directement
-        
-        // Scénarios par défaut si la liste est vide
-        if (availableScenarios.Count == 0)
-        {
-            availableScenarios.Add(new ScenarioData
-            {
-                scenarioName = "Vol Libre",
-                description = "Explorez le monde librement sans contraintes.\n\n" +
-                             "• Météo: Variable\n" +
-                             "• Difficulté: ★☆☆☆☆\n" +
-                             "• Durée: Illimitée",
-                sceneName = "Flight Demo"
-            });
-            
-            availableScenarios.Add(new ScenarioData
-            {
-                scenarioName = "Vol dans la Tempête",
-                description = "Affrontez une météo difficile et testez vos compétences.\n\n" +
-                             "• Météo: Tempête\n" +
-                             "• Difficulté: ★★★★☆\n" +
-                             "• Durée: 15 minutes",
-                sceneName = "Flight Demo"
-            });
-        }
-        
         // Pages de didacticiel par défaut si la liste est vide
         if (tutorialPages.Count == 0)
         {
@@ -846,6 +724,105 @@ public class MainMenuController : MonoBehaviour
     }
 
     #endregion
+
+    #region Sélection de Mission
+
+    /// <summary>
+    /// Met à jour l'affichage des missions
+    /// </summary>
+    void UpdateMissionDisplay()
+    {
+        if (missionObjects == null || missionObjects.Count == 0)
+        {
+            Debug.LogWarning("MainMenuController: Aucune mission dans missionObjects!");
+            return;
+        }
+
+        // Désactiver toutes les missions
+        foreach (GameObject mission in missionObjects)
+        {
+            if (mission != null)
+            {
+                mission.SetActive(false);
+            }
+        }
+
+        // Activer la mission sélectionnée
+        if (selectedMissionIndex >= 0 && selectedMissionIndex < missionObjects.Count)
+        {
+            GameObject selectedMission = missionObjects[selectedMissionIndex];
+            if (selectedMission != null)
+            {
+                selectedMission.SetActive(true);
+                Debug.Log($"MainMenuController: Mission {selectedMissionIndex + 1} affichée");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sélectionne la mission précédente
+    /// </summary>
+    public void PreviousMission()
+    {
+        if (missionObjects.Count == 0) return;
+        
+        selectedMissionIndex--;
+        if (selectedMissionIndex < 0)
+            selectedMissionIndex = missionObjects.Count - 1;
+        
+        UpdateMissionDisplay();
+        PlayButtonSound();
+        Debug.Log($"MainMenuController: Mission précédente - Index: {selectedMissionIndex}");
+    }
+
+    /// <summary>
+    /// Sélectionne la mission suivante
+    /// </summary>
+    public void NextMission()
+    {
+        if (missionObjects.Count == 0) return;
+        
+        selectedMissionIndex++;
+        if (selectedMissionIndex >= missionObjects.Count)
+            selectedMissionIndex = 0;
+        
+        UpdateMissionDisplay();
+        PlayButtonSound();
+        Debug.Log($"MainMenuController: Mission suivante - Index: {selectedMissionIndex}");
+    }
+
+    /// <summary>
+    /// Sélectionne une mission spécifique par index
+    /// </summary>
+    public void SelectMission(int missionIndex)
+    {
+        if (missionIndex >= 0 && missionIndex < missionObjects.Count)
+        {
+            selectedMissionIndex = missionIndex;
+            UpdateMissionDisplay();
+            PlayButtonSound();
+            Debug.Log($"MainMenuController: Mission {missionIndex + 1} sélectionnée");
+        }
+    }
+
+    /// <summary>
+    /// Confirme la sélection de la mission actuelle
+    /// </summary>
+    public void ConfirmMissionSelection()
+    {
+        // Sauvegarder l'index de la mission sélectionnée
+        PlayerPrefs.SetInt("SelectedMission", selectedMissionIndex);
+        PlayerPrefs.Save();
+        
+        Debug.Log($"MainMenuController: Mission {selectedMissionIndex + 1} confirmée et sauvegardée");
+        
+        // Afficher un message de confirmation
+        ShowConfirmationDialog($"Mission {selectedMissionIndex + 1} sélectionnée!");
+        
+        PlayButtonSound();
+    }
+
+    #endregion
 }
 
 /// <summary>
@@ -858,18 +835,6 @@ public class AircraftData
     public string description;
     public Sprite previewSprite;
     public string prefabName;
-}
-
-/// <summary>
-/// Données d'un scénario
-/// </summary>
-[System.Serializable]
-public class ScenarioData
-{
-    public string scenarioName;
-    public string description;
-    public Sprite previewSprite;
-    public string sceneName;
 }
 
 /// <summary>
