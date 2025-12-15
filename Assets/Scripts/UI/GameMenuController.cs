@@ -478,4 +478,77 @@ public class GameMenuController : MonoBehaviour
         Time.timeScale = 1f; // S'assurer que le temps n'est pas en pause
         SceneManager.LoadScene("MainMenu");
     }
+    
+    #region Verrouillage des Sliders pour Missions
+    
+    /// <summary>
+    /// Verrouille ou déverrouille le slider météo
+    /// </summary>
+    public void SetWeatherSliderLocked(bool locked)
+    {
+        if (weatherSlider != null)
+        {
+            weatherSlider.interactable = !locked;
+            
+            // Changer visuellement pour indiquer que c'est verrouillé
+            if (locked)
+            {
+                ColorBlock colors = weatherSlider.colors;
+                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                weatherSlider.colors = colors;
+            }
+            
+            Debug.Log($"GameMenuController: Slider météo {(locked ? "verrouillé" : "déverrouillé")}");
+        }
+    }
+    
+    /// <summary>
+    /// Verrouille ou déverrouille le slider heure
+    /// </summary>
+    public void SetTimeSliderLocked(bool locked)
+    {
+        if (timeSlider != null)
+        {
+            timeSlider.interactable = !locked;
+            
+            // Changer visuellement pour indiquer que c'est verrouillé
+            if (locked)
+            {
+                ColorBlock colors = timeSlider.colors;
+                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                timeSlider.colors = colors;
+            }
+            
+            Debug.Log($"GameMenuController: Slider heure {(locked ? "verrouillé" : "déverrouillé")}");
+        }
+    }
+    
+    /// <summary>
+    /// Force une valeur de météo sans déclencher l'événement onValueChanged
+    /// </summary>
+    public void SetWeatherValue(float value)
+    {
+        if (weatherSlider != null)
+        {
+            weatherSlider.SetValueWithoutNotify(value);
+            currentWeatherIntensity = value;
+            UpdateWeatherText();
+        }
+    }
+    
+    /// <summary>
+    /// Force une valeur d'heure sans déclencher l'événement onValueChanged
+    /// </summary>
+    public void SetTimeValue(float value)
+    {
+        if (timeSlider != null)
+        {
+            timeSlider.SetValueWithoutNotify(value);
+            currentTimeOfDay = value;
+            UpdateTimeText();
+            UpdateSunRotation();
+        }
+    }
+    
+    #endregion
 }

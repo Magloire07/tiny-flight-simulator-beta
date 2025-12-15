@@ -158,6 +158,14 @@ public class DynamicWeatherSystem : MonoBehaviour
         RenderSettings.fogColor = fogColor;
         RenderSettings.fogMode = FogMode.Linear; // Mode linéaire pour distance start/end
         
+        // Activer le MissionManager s'il existe et est désactivé
+        MissionManager missionManager = FindObjectOfType<MissionManager>(true); // true pour inclure les objets inactifs
+        if (missionManager != null && !missionManager.gameObject.activeInHierarchy)
+        {
+            missionManager.gameObject.SetActive(true);
+            Debug.Log("DynamicWeatherSystem: MissionManager activé");
+        }
+        
         // Calculer le prochain tonnerre
         ScheduleNextThunder();
         

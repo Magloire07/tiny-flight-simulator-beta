@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - color
+  - mission3
   layers:
   - Default
   - TransparentFX

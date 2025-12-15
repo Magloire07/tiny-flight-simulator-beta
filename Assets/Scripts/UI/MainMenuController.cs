@@ -115,6 +115,9 @@ public class MainMenuController : MonoBehaviour
         // Initialiser l'affichage des avions (désactiver tous sauf le premier)
         InitializeAircraftDisplay();
         
+        // Initialiser l'affichage des missions (désactiver tous sauf la première)
+        InitializeMissionDisplay();
+        
         // Afficher le panneau principal
         ShowMainPanel();
     }
@@ -139,6 +142,29 @@ public class MainMenuController : MonoBehaviour
         {
             aircraftDisplayObjects[0].SetActive(true);
             Debug.Log($"MainMenuController: Premier avion activé: {aircraftDisplayObjects[0].name}");
+        }
+    }
+    
+    /// <summary>
+    /// Initialise l'affichage des missions au démarrage
+    /// </summary>
+    void InitializeMissionDisplay()
+    {
+        // Désactiver toutes les missions d'abord
+        foreach (GameObject mission in missionObjects)
+        {
+            if (mission != null)
+                mission.SetActive(false);
+        }
+        
+        // Toujours commencer avec la première mission (index 0)
+        selectedMissionIndex = 0;
+        
+        // Activer la première mission
+        if (missionObjects.Count > 0 && missionObjects[0] != null)
+        {
+            missionObjects[0].SetActive(true);
+            Debug.Log($"MainMenuController: Première mission activée: {missionObjects[0].name}");
         }
     }
 
@@ -351,6 +377,9 @@ public class MainMenuController : MonoBehaviour
             return;
         }
         
+        // Annuler tout Invoke précédent pour éviter les conflits
+        CancelInvoke("HideConfirmationDialog");
+        
         // Déplacer le dialogue à la fin de la hiérarchie pour qu'il soit rendu en dernier (au-dessus)
         confirmationDialog.transform.SetAsLastSibling();
         
@@ -375,6 +404,8 @@ public class MainMenuController : MonoBehaviour
         
         // Afficher le dialogue
         confirmationDialog.SetActive(true);
+        
+        Debug.Log($"MainMenuController: Dialogue affiché avec message: {message}");
         
         // Masquer automatiquement après un délai si configuré
         if (confirmationDuration > 0)
@@ -810,14 +841,22 @@ public class MainMenuController : MonoBehaviour
     /// </summary>
     public void ConfirmMissionSelection()
     {
-        // Sauvegarder l'index de la mission sélectionnée
+        // Obtenir le nom de la mission
+        string missionName = "Mission inconnue";
+        if (selectedMissionIndex >= 0 && selectedMissionIndex < missionObjects.Count && missionObjects[selectedMissionIndex] != null)
+        {
+            missionName = missionObjects[selectedMissionIndex].name;
+        }
+        
+        // Sauvegarder l'index ET le nom de la mission sélectionnée
         PlayerPrefs.SetInt("SelectedMission", selectedMissionIndex);
+        PlayerPrefs.SetString("SelectedMissionName", missionName);
         PlayerPrefs.Save();
         
-        Debug.Log($"MainMenuController: Mission {selectedMissionIndex + 1} confirmée et sauvegardée");
+        Debug.Log($"MainMenuController: {missionName} confirmée et sauvegardée (index: {selectedMissionIndex})");
         
-        // Afficher un message de confirmation
-        ShowConfirmationDialog($"Mission {selectedMissionIndex + 1} sélectionnée!");
+        // Afficher un message de confirmation avec le nom réel
+        ShowConfirmationDialog($"{missionName} sélectionnée!");
         
         PlayButtonSound();
     }
