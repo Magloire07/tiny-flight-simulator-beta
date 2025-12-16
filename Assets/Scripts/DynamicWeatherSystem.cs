@@ -16,6 +16,9 @@ public class DynamicWeatherSystem : MonoBehaviour
     [Tooltip("CloudMaster pour ajuster les nuages")]
     public CloudMaster cloudMaster;
     
+    [Tooltip("Rendu volumétrique des nuages (Ray Marching)")]
+    public VolumetricCloudsRenderer volumetricClouds;
+    
     [Tooltip("Texte UI pour afficher la météo actuelle")]
     public Text weatherDisplayText;
     
@@ -266,8 +269,11 @@ public class DynamicWeatherSystem : MonoBehaviour
                 rainAudioSource.Stop();
         }
         
-        // Suivre la caméra
-        if (mainCamera != null)
+        // Suivre la caméra (la retrouver à chaque frame au cas où elle change)
+        if (mainCamera == null || !mainCamera.enabled)
+            mainCamera = Camera.main;
+        
+        if (mainCamera != null && rainParticles != null)
         {
             rainParticles.transform.position = mainCamera.transform.position + Vector3.up * 50f;
         }
