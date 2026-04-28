@@ -96,7 +96,7 @@ public class PlaneWheelBrakeController : MonoBehaviour
     {
         // Using Rigidbody speed is consistent with Plane's airspeed when on ground
         var rb = plane != null ? plane.GetComponent<Rigidbody>() : null;
-        return rb != null ? rb.velocity.magnitude : 0f;
+        return rb != null ? rb.linearVelocity.magnitude : 0f;
     }
 
     private bool isPlaneGrounded()

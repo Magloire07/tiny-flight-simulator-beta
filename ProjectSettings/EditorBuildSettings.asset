@@ -12,9 +12,16 @@ EditorBuildSettings:
     path: Assets/_Scenes/Flight Demo.unity
     guid: 20dddf1c73edf8b43a45ac49c16cb892
   m_configObjects:
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 5e66a85d007f2394ca1cba0b9fed93be,
+      type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 2c72c1a5f2cf1774ca235bcb5559048a,
       type: 2}
     com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000,
       guid: 522fac943656ec343bba86c03b618f7c, type: 2}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 844bf6aec9db4c34eafd584918111e0e,
+      type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 74e08b9a07aca8b409c786b530f696ca,
+      type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 35b78f6612e56d84fb828633666c260f,
       type: 2}
+  m_UseUCBPForAssetBundles: 0

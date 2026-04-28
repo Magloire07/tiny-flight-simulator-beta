@@ -70,10 +70,10 @@ public class PlaneWheelRotation : MonoBehaviour
             float sign = 1f;
             if (useVelocityForSpinSign && rb != null)
             {
-                float speed = rb.velocity.magnitude;
+                float speed = rb.linearVelocity.magnitude;
                 if (speed > velocitySignMinSpeed)
                 {
-                    sign = Mathf.Sign(Vector3.Dot(rb.velocity, transform.forward));
+                    sign = Mathf.Sign(Vector3.Dot(rb.linearVelocity, transform.forward));
                     if (sign == 0f) sign = 1f;
                 }
                 else
@@ -87,7 +87,7 @@ public class PlaneWheelRotation : MonoBehaviour
             }
 
             bool grounded = wheelCollider.isGrounded;
-            bool stopVisual = grounded && ((rb != null && rb.velocity.magnitude <= velocitySignMinSpeed && Mathf.Abs(rpm) <= rpmStopDeadzone) || wheelCollider.brakeTorque >= brakeStopTorque);
+            bool stopVisual = grounded && ((rb != null && rb.linearVelocity.magnitude <= velocitySignMinSpeed && Mathf.Abs(rpm) <= rpmStopDeadzone) || wheelCollider.brakeTorque >= brakeStopTorque);
             float rotationThisFrame = stopVisual ? 0f : directionMultiplier * sign * Mathf.Abs(rpm) * 6f * Time.deltaTime; // 6 = 360°/60s
             
             accumulatedRotation += rotationThisFrame;

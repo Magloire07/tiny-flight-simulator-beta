@@ -89,7 +89,7 @@ public class PlaneWheelSteering : MonoBehaviour
         float currentSteerAngle = steerInput * maxSteerAngle * steerDirectionMultiplier;
         
         // Limit steering at high speed
-        if (rb != null && rb.velocity.magnitude > maxSteerSpeed)
+        if (rb != null && rb.linearVelocity.magnitude > maxSteerSpeed)
             currentSteerAngle = 0f;
         
         // Get RPM from WheelCollider and calculate roll rotation
@@ -97,9 +97,9 @@ public class PlaneWheelSteering : MonoBehaviour
         float sign = 1f;
         if (useVelocityForSpinSign && rb != null)
         {
-            float speed = rb.velocity.magnitude;
+            float speed = rb.linearVelocity.magnitude;
             if (speed > velocitySignMinSpeed)
-                sign = Mathf.Sign(Vector3.Dot(rb.velocity, transform.forward));
+                sign = Mathf.Sign(Vector3.Dot(rb.linearVelocity, transform.forward));
             else
                 sign = Mathf.Sign(rpm != 0f ? rpm : 1f);
         }
@@ -110,7 +110,7 @@ public class PlaneWheelSteering : MonoBehaviour
 
         // Stop visual spin when essentially idle or braking hard
         bool grounded = wheelCollider.isGrounded;
-        bool stopVisual = grounded && ( (rb != null && rb.velocity.magnitude <= velocitySignMinSpeed && Mathf.Abs(rpm) <= rpmStopDeadzone) || wheelCollider.brakeTorque >= brakeStopTorque );
+        bool stopVisual = grounded && ( (rb != null && rb.linearVelocity.magnitude <= velocitySignMinSpeed && Mathf.Abs(rpm) <= rpmStopDeadzone) || wheelCollider.brakeTorque >= brakeStopTorque );
         float rollRotationThisFrame = stopVisual ? 0f : Mathf.Abs(rpm) * 6f * Time.deltaTime * rollDirectionMultiplier * sign; // 6 = 360°/60s
         
         accumulatedRotation += rollRotationThisFrame;
@@ -185,7 +185,7 @@ public class PlaneWheelSteering : MonoBehaviour
         float steerAngle = steerInput * maxSteerAngle * steerDirectionMultiplier;
 
         // Limiter le braquage à haute vitesse
-        if (rb != null && rb.velocity.magnitude > maxSteerSpeed)
+        if (rb != null && rb.linearVelocity.magnitude > maxSteerSpeed)
             steerAngle = 0f;
 
         wheelCollider.steerAngle = steerAngle;

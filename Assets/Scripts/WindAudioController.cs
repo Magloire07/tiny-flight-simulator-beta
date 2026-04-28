@@ -137,7 +137,7 @@ public class WindAudioController : MonoBehaviour
         if (rb == null) return;
         
         // Obtenir la vitesse de l'avion (relative à l'air)
-        float airspeed = rb.velocity.magnitude;
+        float airspeed = rb.linearVelocity.magnitude;
         currentWindSpeed = airspeed;
         
         // Obtenir le throttle si disponible

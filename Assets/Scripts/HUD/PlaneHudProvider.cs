@@ -35,7 +35,7 @@ public class PlaneHudProvider : MonoBehaviour, IHudProvider
         }
     }
 
-    public float SpeedMs => plane != null ? plane.Airspeed : (rb != null ? rb.velocity.magnitude : 0f);
+    public float SpeedMs => plane != null ? plane.Airspeed : (rb != null ? rb.linearVelocity.magnitude : 0f);
     public float SpeedKnots => SpeedMs * 1.943844f;
     public float AltitudeMeters => transform.position.y * worldUnitToMeters;
     public float HeadingDegrees
@@ -70,7 +70,7 @@ public class PlaneHudProvider : MonoBehaviour, IHudProvider
             return angle;
         }
     }
-    public float VerticalSpeed => rb != null ? rb.velocity.y : 0f;
+    public float VerticalSpeed => rb != null ? rb.linearVelocity.y : 0f;
     public double Latitude
     {
         get

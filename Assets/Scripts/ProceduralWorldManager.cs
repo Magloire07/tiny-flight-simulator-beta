@@ -539,7 +539,7 @@ public class ProceduralWorldManager : MonoBehaviour
             // Réinitialiser les vélocités AVANT de passer en kinematic
             if (!planeRb.isKinematic)
             {
-                planeRb.velocity = Vector3.zero;
+                planeRb.linearVelocity = Vector3.zero;
                 planeRb.angularVelocity = Vector3.zero;
             }
             
@@ -591,7 +591,7 @@ public class ProceduralWorldManager : MonoBehaviour
             // Réinitialiser les vélocités AVANT de passer en kinematic
             if (!planeRb.isKinematic)
             {
-                planeRb.velocity = Vector3.zero;
+                planeRb.linearVelocity = Vector3.zero;
                 planeRb.angularVelocity = Vector3.zero;
             }
             
@@ -634,7 +634,7 @@ public class ProceduralWorldManager : MonoBehaviour
         if (rb != null)
         {
             rb.isKinematic = originalKinematicState;
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             Debug.Log("ProceduralWorldManager: Rigidbody de l'avion réactivé");
         }

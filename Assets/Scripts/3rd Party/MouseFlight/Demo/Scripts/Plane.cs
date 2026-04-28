@@ -258,13 +258,13 @@ namespace MFlight.Demo
             if (rigid == null) return;
 
             // Calculate airspeed (magnitude of velocity)
-            airspeed = rigid.velocity.magnitude;
+            airspeed = rigid.linearVelocity.magnitude;
 
             // Calculate raw AoA (angle between forward and velocity projected onto pitch plane)
             float rawAoA = 0f;
             if (airspeed > 1f)
             {
-                Vector3 velocityDir = rigid.velocity.normalized;
+                Vector3 velocityDir = rigid.linearVelocity.normalized;
                 Vector3 vProj = Vector3.ProjectOnPlane(velocityDir, transform.right).normalized; // project onto pitch plane
                 rawAoA = Vector3.SignedAngle(transform.forward, vProj, transform.right);
             }
@@ -363,7 +363,7 @@ namespace MFlight.Demo
             float liftMult = 1f;
 
             // Apply lift (perpendicular to velocity) with ground effect
-            Vector3 liftDirection = Vector3.Cross(rigid.velocity.normalized, transform.right);
+            Vector3 liftDirection = Vector3.Cross(rigid.linearVelocity.normalized, transform.right);
             bool takeoffUnlocked = (airspeed >= takeoffMinSpeed);
             float effectiveLiftMult = liftMult;
             if (!takeoffUnlocked)
@@ -376,7 +376,7 @@ namespace MFlight.Demo
             // Apply drag (opposite to velocity)
             if (airspeed > 0.1f)
             {
-                rigid.AddForce(-rigid.velocity.normalized * dragForce * aero.responseMultiplier, ForceMode.Force);
+                rigid.AddForce(-rigid.linearVelocity.normalized * dragForce * aero.responseMultiplier, ForceMode.Force);
             }
 
             // Ground downforce and rolling resistance removed

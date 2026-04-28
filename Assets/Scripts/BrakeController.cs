@@ -170,7 +170,7 @@ public class BrakeController : MonoBehaviour
         if (!isGrounded) return;
         
         // Calculer la force de freinage opposée à la vélocité horizontale
-        Vector3 horizontalVelocity = rb.velocity;
+        Vector3 horizontalVelocity = rb.linearVelocity;
         horizontalVelocity.y = 0f; // Ignorer la vélocité verticale
         
         if (horizontalVelocity.magnitude > 0.1f)
@@ -180,7 +180,7 @@ public class BrakeController : MonoBehaviour
             rb.AddForce(brakeForceVector, ForceMode.Force);
             
             // Augmenter le drag pour un freinage plus efficace
-            rb.drag = 5f;
+            rb.linearDamping = 5f;
             
             // Jouer le son de freinage en boucle si disponible
             if (brakeAudioSource != null && brakeLoopSound != null && !brakeAudioSource.isPlaying)
@@ -193,7 +193,7 @@ public class BrakeController : MonoBehaviour
         else
         {
             // Arrêter complètement si vitesse très faible
-            rb.velocity = new Vector3(0f, rb.velocity.y, 0f);
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
             rb.angularVelocity *= 0.9f;
             
             // Arrêter le son de boucle
@@ -282,7 +282,7 @@ public class BrakeController : MonoBehaviour
         // Réinitialiser le drag si les freins sont désactivés
         if (!brakesOn && rb != null)
         {
-            rb.drag = 0f;
+            rb.linearDamping = 0f;
         }
     }
     
