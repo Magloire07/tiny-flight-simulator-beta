@@ -106,7 +106,6 @@ public class MenuEnvironment3D : MonoBehaviour
         BuildFloor();
         BuildAmbientLights();
         BuildParticles();
-        BuildPillarRing();
 
         RenderSettings.ambientMode  = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = ambientLightColor;
