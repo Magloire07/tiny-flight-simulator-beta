@@ -237,9 +237,11 @@ public class MainMenuLayoutBuilder : MonoBehaviour
         
         Button btn = button.AddComponent<Button>();
         ColorBlock colors = btn.colors;
-        colors.normalColor = color;
-        colors.highlightedColor = color * 1.2f;
-        colors.pressedColor = color * 0.8f;
+        colors.normalColor      = color;
+        colors.highlightedColor = new Color(1f, 0.92f, 0.3f, 1f);  // jaune vif
+        colors.selectedColor    = new Color(1f, 0.92f, 0.3f, 1f);  // idem pour joystick/clavier
+        colors.pressedColor     = color * 0.7f;
+        colors.colorMultiplier  = 1f;
         btn.colors = colors;
         
         // Texte du bouton
@@ -253,7 +255,7 @@ public class MainMenuLayoutBuilder : MonoBehaviour
         
         Text textComponent = textObj.AddComponent<Text>();
         textComponent.text = text;
-        textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        textComponent.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         textComponent.fontSize = buttonFontSize;
         textComponent.color = textColor;
         textComponent.alignment = TextAnchor.MiddleCenter;
@@ -274,7 +276,7 @@ public class MainMenuLayoutBuilder : MonoBehaviour
         
         Text text = textObj.AddComponent<Text>();
         text.text = content;
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = fontSize;
         text.color = textColor;
         text.alignment = alignment;

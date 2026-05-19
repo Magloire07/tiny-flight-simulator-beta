@@ -74,6 +74,9 @@ namespace MFlight.Demo
         [Tooltip("Require a mouse button to be held for mouse pitch/yaw")] public bool requireMouseButton = false;
         [Tooltip("Mouse button index used when requireMouseButton is true (0=Left,1=Right,2=Middle)")] public int mouseButtonIndex = 1;
         [Tooltip("Ignore tiny mouse movements below this absolute axis value")] [Range(0f,0.2f)] public float mouseAxisDeadzone = 0.01f;
+        [Header("XR Input")]
+        [Tooltip("Quand actif, désactive le clavier/souris — les inputs sont pilotés par XRFlightInput.")]
+        public bool useXRInput = false;
 
         public float Pitch { set { pitch = Mathf.Clamp(value, -1f, 1f); } get { return pitch; } }
         public float Yaw { set { yaw = Mathf.Clamp(value, -1f, 1f); } get { return yaw; } }
@@ -151,6 +154,15 @@ namespace MFlight.Demo
 
         private void HandleInput()
         {
+            // Quand XRFlightInput pilote l'avion, on court-circuite tout l'input clavier/souris
+            if (useXRInput)
+            {
+                rawPitchCommand = pitch;
+                rawRollCommand  = roll;
+                rawYawCommand   = yaw;
+                return;
+            }
+
             // Throttle control (use configurable rate so increments can be smaller/slower)
             float throttleDelta = throttleChangeRate * Time.deltaTime;
             if (Input.GetKey(KeyCode.LeftShift))

@@ -15,6 +15,10 @@ public class CameraViewSwitcher : MonoBehaviour
     
     [Tooltip("Référence au MouseFlightController pour désactiver en vue cockpit")]
     public MouseFlightController mouseFlightController;
+
+    [Header("VR Support")]
+    [Tooltip("Racine XR Origin (XR Rig) — à assigner si la scène utilise la VR. En VR, c'est cet objet qui est repositionné plutôt que la caméra.")]
+    public Transform xrOrigin;
     
     [Header("Vue Extérieure (actuelle)")]
     [Tooltip("Position de la caméra en vue extérieure (relative à l'avion)")]
@@ -74,6 +78,10 @@ public class CameraViewSwitcher : MonoBehaviour
     [Tooltip("Vue par défaut au démarrage (false = extérieure, true = cockpit)")]
     public bool startInCockpitView = false;
     
+    [Header("Fuselage (vue cockpit)")]
+    [Tooltip("Renderers du fuselage à rendre double-face en vue cockpit (faces internes visibles)")]
+    public Renderer[] fuselageRenderers;
+
     [Header("Audio")]
     [Tooltip("Son du beep lors du changement de vue")]
     public AudioClip switchViewBeep;
@@ -97,15 +105,29 @@ public class CameraViewSwitcher : MonoBehaviour
     private float externalViewFOV; // Sauvegarde du FOV de la vue externe
     private float cockpitYaw = 0f; // Rotation horizontale de la vue cockpit
     private float cockpitPitch = 0f; // Rotation verticale de la vue cockpit
+    private GameObject[] innerFuselageObjects; // Meshes miroir (normales inversées) pour la vue cockpit
     
     void Start()
     {
         Debug.Log("CameraViewSwitcher: Initialisation...");
-        
+
+        CreateInnerFuselageObjects();
+
         if (viewCamera == null)
         {
             viewCamera = Camera.main;
             Debug.Log("CameraViewSwitcher: Caméra trouvée automatiquement: " + (viewCamera != null ? viewCamera.name : "null"));
+        }
+
+        // Chercher XR Origin automatiquement si non assigné
+        if (xrOrigin == null)
+        {
+            var xrOriginObj = GameObject.Find("XR Origin (XR Rig)") ?? GameObject.Find("XR Origin") ?? GameObject.Find("XROrigin");
+            if (xrOriginObj != null)
+            {
+                xrOrigin = xrOriginObj.transform;
+                Debug.Log("CameraViewSwitcher: XR Origin trouvé automatiquement: " + xrOrigin.name);
+            }
         }
         
         if (aircraft == null)
@@ -235,6 +257,18 @@ public class CameraViewSwitcher : MonoBehaviour
     }
     
     /// <summary>
+    /// Active directement la vue cockpit (sans toggle).
+    /// Appelable depuis d'autres scripts (ex: RunwayMenuController).
+    /// </summary>
+    public void ActivateCockpitView()
+    {
+        // Toujours forcer le repositionnement, même si isCockpitView est déjà true
+        isCockpitView = true;
+        SetCockpitView(true);
+        PlaySwitchBeep(true);
+    }
+
+    /// <summary>
     /// Bascule entre vue cockpit et vue extérieure
     /// </summary>
     public void ToggleView()
@@ -311,7 +345,84 @@ public class CameraViewSwitcher : MonoBehaviour
         beep.SetData(data, 0);
         return beep;
     }
-    
+
+    /// <summary>
+    /// Passe les matériaux du fuselage en double-face (Cull Off) pour la vue cockpit.
+    /// </summary>
+    /// <summary>
+    /// Crée, pour chaque renderer du fuselage, un GameObject enfant avec le même mesh
+    /// mais les normales/triangles inversés, afin de rendre les faces intérieures.
+    /// </summary>
+    void CreateInnerFuselageObjects()
+    {
+        if (fuselageRenderers == null || fuselageRenderers.Length == 0) return;
+
+        innerFuselageObjects = new GameObject[fuselageRenderers.Length];
+
+        for (int i = 0; i < fuselageRenderers.Length; i++)
+        {
+            if (fuselageRenderers[i] == null) continue;
+
+            MeshFilter mf = fuselageRenderers[i].GetComponent<MeshFilter>();
+            if (mf == null || mf.sharedMesh == null) continue;
+
+            GameObject inner = new GameObject(fuselageRenderers[i].name + "_inner");
+            inner.transform.SetParent(fuselageRenderers[i].transform, false);
+            inner.transform.localPosition = Vector3.zero;
+            inner.transform.localRotation = Quaternion.identity;
+            // Scale négatif sur X : inverse le winding order → faces intérieures visibles
+            // sans nécessiter Read/Write sur le mesh.
+            inner.transform.localScale = new Vector3(-1f, 1f, 1f);
+
+            MeshFilter innerMF = inner.AddComponent<MeshFilter>();
+            innerMF.sharedMesh = mf.sharedMesh; // même mesh, pas de copie
+
+            MeshRenderer innerMR = inner.AddComponent<MeshRenderer>();
+            innerMR.sharedMaterials = fuselageRenderers[i].sharedMaterials;
+
+            inner.SetActive(false);
+            innerFuselageObjects[i] = inner;
+        }
+    }
+
+    /// <summary>
+    /// Retourne une copie du mesh avec les normales et l'ordre des triangles inversés.
+    /// </summary>
+    Mesh FlipNormals(Mesh original)
+    {
+        Mesh flipped = UnityEngine.Object.Instantiate(original);
+        flipped.name = original.name + "_flipped";
+
+        Vector3[] normals = flipped.normals;
+        for (int k = 0; k < normals.Length; k++)
+            normals[k] = -normals[k];
+        flipped.normals = normals;
+
+        for (int s = 0; s < flipped.subMeshCount; s++)
+        {
+            int[] tris = flipped.GetTriangles(s);
+            for (int k = 0; k < tris.Length; k += 3)
+            {
+                int tmp = tris[k];
+                tris[k] = tris[k + 2];
+                tris[k + 2] = tmp;
+            }
+            flipped.SetTriangles(tris, s);
+        }
+
+        return flipped;
+    }
+
+    void SetFuselageDoubleSided(bool doubleSided)
+    {
+        if (innerFuselageObjects == null) return;
+        for (int i = 0; i < innerFuselageObjects.Length; i++)
+        {
+            if (innerFuselageObjects[i] != null)
+                innerFuselageObjects[i].SetActive(doubleSided);
+        }
+    }
+
     /// <summary>
     /// Configure la vue cockpit
     /// </summary>
@@ -342,18 +453,18 @@ public class CameraViewSwitcher : MonoBehaviour
             mouseFlightController.enabled = false;
             Debug.Log("CameraViewSwitcher: MouseFlightController désactivé");
         }
+
+        // Fuselage double-face en vue cockpit
+        SetFuselageDoubleSided(true);
         
-        // Appliquer le FOV cockpit
-        if (viewCamera != null)
+        // Appliquer le FOV cockpit (désactivé en VR, le headset contrôle le FOV)
+        if (viewCamera != null && !UnityEngine.XR.XRSettings.enabled)
         {
             viewCamera.fieldOfView = cockpitFOV;
         }
         
-        if (instant && viewCamera != null)
-        {
-            viewCamera.transform.position = targetPosition;
-            viewCamera.transform.rotation = targetRotation;
-        }
+        if (instant)
+            ApplyCameraTransform(targetPosition, targetRotation);
     }
     
     /// <summary>
@@ -366,9 +477,12 @@ public class CameraViewSwitcher : MonoBehaviour
         {
             mouseFlightController.enabled = true;
         }
+
+        // Restaurer le fuselage single-face (Cull Back)
+        SetFuselageDoubleSided(false);
         
-        // Restaurer le FOV de la vue externe
-        if (viewCamera != null)
+        // Restaurer le FOV de la vue externe (désactivé en VR, le headset contrôle le FOV)
+        if (viewCamera != null && !UnityEngine.XR.XRSettings.enabled)
         {
             viewCamera.fieldOfView = externalViewFOV;
         }
@@ -380,11 +494,8 @@ public class CameraViewSwitcher : MonoBehaviour
             targetPosition = aircraft.position + aircraft.TransformDirection(externalViewOffset);
             targetRotation = Quaternion.LookRotation(aircraft.position - targetPosition);
             
-            if (instant && viewCamera != null)
-            {
-                viewCamera.transform.position = targetPosition;
-                viewCamera.transform.rotation = targetRotation;
-            }
+            if (instant)
+                ApplyCameraTransform(targetPosition, targetRotation);
         }
     }
     
@@ -401,27 +512,29 @@ public class CameraViewSwitcher : MonoBehaviour
             if (useOffsetOnly || pilotSeatTransform == null)
             {
                 targetPosition = aircraft.TransformPoint(cockpitViewOffset);
-                // Appliquer la rotation de base + le free look
+                // Rotation de base (avion + réglage cockpit)
                 Quaternion baseRotation = aircraft.rotation * Quaternion.Euler(cockpitViewRotation);
-                Quaternion freeLookRotation = Quaternion.Euler(cockpitPitch, cockpitYaw, 0f);
-                targetRotation = baseRotation * freeLookRotation;
+                // Free look en espace monde : yaw autour de l'axe Y monde, pitch autour de l'axe X monde
+                Quaternion worldYaw   = Quaternion.AngleAxis(cockpitYaw,   Vector3.up);
+                Quaternion worldPitch = Quaternion.AngleAxis(cockpitPitch, Vector3.right);
+                targetRotation = worldYaw * worldPitch * baseRotation;
             }
             else
             {
                 // Utiliser le siège pilote + offset
                 targetPosition = pilotSeatTransform.position + pilotSeatTransform.TransformDirection(cockpitViewOffset);
-                // Appliquer la rotation de base + le free look
                 Quaternion baseRotation = pilotSeatTransform.rotation * Quaternion.Euler(cockpitViewRotation);
-                Quaternion freeLookRotation = Quaternion.Euler(cockpitPitch, cockpitYaw, 0f);
-                targetRotation = baseRotation * freeLookRotation;
+                Quaternion worldYaw   = Quaternion.AngleAxis(cockpitYaw,   Vector3.up);
+                Quaternion worldPitch = Quaternion.AngleAxis(cockpitPitch, Vector3.right);
+                targetRotation = worldYaw * worldPitch * baseRotation;
             }
             
             // Application directe sans Lerp pour éviter l'effet d'inertie
-            viewCamera.transform.position = targetPosition;
-            viewCamera.transform.rotation = targetRotation;
+            ApplyCameraTransform(targetPosition, targetRotation);
             
-            // Maintenir le FOV cockpit
-            viewCamera.fieldOfView = cockpitFOV;
+            // Maintenir le FOV cockpit (désactivé en VR, le headset contrôle le FOV)
+            if (!UnityEngine.XR.XRSettings.enabled)
+                viewCamera.fieldOfView = cockpitFOV;
         }
         else
         {
@@ -430,6 +543,40 @@ public class CameraViewSwitcher : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Applique la position/rotation soit au XR Origin (VR), soit à la caméra (non-VR).
+    /// </summary>
+    void ApplyCameraTransform(Vector3 pos, Quaternion rot)
+    {
+        // Toujours utiliser le XR Origin s'il est assigné.
+        // XRSettings.enabled est false avec le simulateur XR mais le Tracked Pose Driver
+        // écrase viewCamera.transform.position chaque frame → la caméra ne bougera jamais
+        // si on essaie de la déplacer directement.
+        if (xrOrigin != null)
+        {
+            // Compensate pour l'offset de tracking de la tête dans le rig (3D complet)
+            // afin que les YEUX atterrissent exactement sur 'pos' et non pos + headOffset.
+            // On garde les 3 composantes (y compris y) pour que la rotation ne déplace pas
+            // la caméra — sinon rot * (0, head_y, 0) varie avec la rotation et crée un effet
+            // d'orbite autour de cockpitViewOffset au lieu d'une rotation sur place.
+            if (viewCamera != null)
+            {
+                Vector3 headLocal = xrOrigin.InverseTransformPoint(viewCamera.transform.position);
+                xrOrigin.position = pos - rot * headLocal;
+            }
+            else
+            {
+                xrOrigin.position = pos;
+            }
+            xrOrigin.rotation = rot;
+        }
+        else if (viewCamera != null)
+        {
+            viewCamera.transform.position = pos;
+            viewCamera.transform.rotation = rot;
+        }
+    }
+
     /// <summary>
     /// Debug: dessiner les positions de caméra dans l'éditeur
     /// </summary>

@@ -102,6 +102,8 @@ public class DynamicWeatherSystem : MonoBehaviour
     private float originalSunIntensity = 1f;
     private ParticleSystem.EmissionModule rainEmission;
     private ParticleSystem.EmissionModule stormEmission;
+    private float nextWeatherUpdate = 0f;
+    private const float weatherUpdateInterval = 0.1f; // 10 fps suffisant pour la météo
     
     void Start()
     {
@@ -174,8 +176,13 @@ public class DynamicWeatherSystem : MonoBehaviour
     
     void Update()
     {
-        UpdateWeather();
-        UpdateWind();
+        // Météo et vent throttlés à 10 fps — inutile d'appeler chaque frame
+        if (Time.time >= nextWeatherUpdate)
+        {
+            nextWeatherUpdate = Time.time + weatherUpdateInterval;
+            UpdateWeather();
+            UpdateWind();
+        }
         UpdateThunder();
         UpdateLightning();
         UpdateWeatherDisplay();

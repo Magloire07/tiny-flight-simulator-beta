@@ -52,7 +52,7 @@ public class PlaneAnimation : MonoBehaviour {
         // Si EngineController est présent, il gère lui-même la rotation de l'hélice
         if (engineController == null && propeller != null)
         {
-            propeller.Rotate (Vector3.forward * propSpeed * Time.deltaTime);
+            propeller.Rotate (Vector3.forward * propSpeed * Time.unscaledDeltaTime);
         }
 
         bool manualActive = true;
@@ -68,23 +68,27 @@ public class PlaneAnimation : MonoBehaviour {
 
         // Ailerons: use commanded roll (exclude stabilization corrections) + symmetric
         float targetRoll = manualActive ? plane.CommandRoll : 0f;
+        float safeSmooth = Mathf.Max(smoothTime, 0.001f);
+        // Passer unscaledDeltaTime explicitement : SmoothDamp utilise Time.deltaTime en interne
+        // par défaut, ce qui produit NaN quand timeScale = 0 (jeu en pause).
+        float udt = Time.unscaledDeltaTime;
         float targetAileronSym = manualActive ? plane.AileronSymmetric : 0f;
-        smoothedRoll = Mathf.SmoothDamp (smoothedRoll, targetRoll, ref smoothRollV, Time.deltaTime * smoothTime);
-        smoothedAileronSym = Mathf.SmoothDamp (smoothedAileronSym, targetAileronSym, ref smoothAileronSymV, Time.deltaTime * smoothTime);
-        float leftDeflection = (-smoothedRoll * aileronMax) + (smoothedAileronSym * aileronSymmetricMax);
-        float rightDeflection = (smoothedRoll * aileronMax) + (smoothedAileronSym * aileronSymmetricMax);
-        aileronLeft.localEulerAngles = new Vector3 (leftDeflection, aileronLeft.localEulerAngles.y, aileronLeft.localEulerAngles.z);
-        aileronRight.localEulerAngles = new Vector3 (rightDeflection, aileronRight.localEulerAngles.y, aileronRight.localEulerAngles.z);
+        smoothedRoll        = Mathf.SmoothDamp(smoothedRoll,        targetRoll,       ref smoothRollV,        safeSmooth, Mathf.Infinity, udt);
+        smoothedAileronSym  = Mathf.SmoothDamp(smoothedAileronSym,  targetAileronSym, ref smoothAileronSymV,  safeSmooth, Mathf.Infinity, udt);
+        float leftDeflection  = (-smoothedRoll * aileronMax) + (smoothedAileronSym * aileronSymmetricMax);
+        float rightDeflection = ( smoothedRoll * aileronMax) + (smoothedAileronSym * aileronSymmetricMax);
+        aileronLeft.localEulerAngles  = new Vector3(leftDeflection,  aileronLeft.localEulerAngles.y,  aileronLeft.localEulerAngles.z);
+        aileronRight.localEulerAngles = new Vector3(rightDeflection, aileronRight.localEulerAngles.y, aileronRight.localEulerAngles.z);
 
         // Pitch: pilot commanded only (trim removed)
         float commandedPitch = plane.CommandPitch;
         float targetPitch = manualActive ? commandedPitch : 0f;
-        smoothedPitch = Mathf.SmoothDamp (smoothedPitch, targetPitch, ref smoothPitchV, Time.deltaTime * smoothTime);
-        elevator.localEulerAngles = new Vector3 (-smoothedPitch * elevatorMax, elevator.localEulerAngles.y, elevator.localEulerAngles.z);
+        smoothedPitch = Mathf.SmoothDamp(smoothedPitch, targetPitch, ref smoothPitchV, safeSmooth, Mathf.Infinity, udt);
+        elevator.localEulerAngles = new Vector3(-smoothedPitch * elevatorMax, elevator.localEulerAngles.y, elevator.localEulerAngles.z);
 
         // Yaw: commanded (exclude stabilization corrections); no trim yet
         float targetYaw = manualActive ? plane.CommandYaw : 0f;
-        smoothedYaw = Mathf.SmoothDamp (smoothedYaw, targetYaw, ref smoothYawV, Time.deltaTime * smoothTime);
-        rudder.localEulerAngles = new Vector3 (rudder.localEulerAngles.x, -smoothedYaw * rudderMax, rudder.localEulerAngles.z);
+        smoothedYaw = Mathf.SmoothDamp(smoothedYaw, targetYaw, ref smoothYawV, safeSmooth, Mathf.Infinity, udt);
+        rudder.localEulerAngles = new Vector3(rudder.localEulerAngles.x, -smoothedYaw * rudderMax, rudder.localEulerAngles.z);
     }
 }

@@ -1,17 +1,32 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
-using UnityEngine.XR.Interaction.Toolkit.UI;
 using UnityEngine.EventSystems;
 
 /// <summary>
 /// Affiche un point d'impact visuel (dot + halo) à l'endroit où le laser
 /// XR touche une surface (3D ou UI World Space).
-/// Attacher sur le même GameObject que XRRayInteractor.
+/// S'auto-attache à tous les XRRayInteractor de la scène au démarrage.
 /// </summary>
 [RequireComponent(typeof(XRRayInteractor))]
 public class XRLaserImpactDot : MonoBehaviour
 {
+    /// <summary>
+    /// S'attache automatiquement à chaque XRRayInteractor présent dans la scène,
+    /// quelle que soit la scène (MainMenu, Flight Demo, etc.).
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void AutoAttach()
+    {
+        var interactors = FindObjectsOfType<XRRayInteractor>(true);
+        foreach (var ri in interactors)
+        {
+            if (ri.GetComponent<XRLaserImpactDot>() == null)
+                ri.gameObject.AddComponent<XRLaserImpactDot>();
+        }
+    }
+
+
     [Header("Apparence")]
     public Color dotColor      = new Color(1f, 0.25f, 0.15f, 1f);
     public Color haloColor     = new Color(1f, 0.40f, 0.20f, 0.30f);
@@ -42,6 +57,17 @@ public class XRLaserImpactDot : MonoBehaviour
     {
         _interactor = GetComponent<XRRayInteractor>();
         CreateVisuals();
+    }
+
+    void OnDisable()
+    {
+        if (_dotRoot != null) _dotRoot.gameObject.SetActive(false);
+        _alpha = 0f;
+    }
+
+    void OnEnable()
+    {
+        _alpha = 0f;
     }
 
     void Update()
@@ -80,23 +106,20 @@ public class XRLaserImpactDot : MonoBehaviour
 
         if (_interactor == null) return false;
 
-        // 1) Hit sur UI (Canvas World Space via TrackedDeviceGraphicRaycaster)
-        XRUIInputModule uiModule = FindObjectOfType<XRUIInputModule>();
-        if (uiModule != null)
+        // 1) Hit sur UI — utilise l'API directe de XRRayInteractor (XR Toolkit 3.x)
+        if (_interactor.TryGetCurrentUIRaycastResult(out RaycastResult uiHit) && uiHit.isValid)
         {
-            // Récupère le dernier raycast UI de ce contrôleur
-            if (uiModule.GetTrackedDeviceModel(_interactor, out TrackedDeviceModel model))
-            {
-                var raycastResult = model.currentRaycast;
-                if (raycastResult.isValid && raycastResult.worldPosition != Vector3.zero)
-                {
-                    position = raycastResult.worldPosition;
-                    normal   = raycastResult.worldNormal == Vector3.zero
-                               ? -transform.forward
-                               : raycastResult.worldNormal;
-                    return true;
-                }
-            }
+            // worldPosition peut être zéro sur certaines versions du toolkit ;
+            // dans ce cas on reconstitue la position via la distance du hit
+            if (uiHit.worldPosition != Vector3.zero)
+                position = uiHit.worldPosition;
+            else
+                position = _interactor.rayOriginTransform != null
+                           ? _interactor.rayOriginTransform.position + _interactor.rayOriginTransform.forward * uiHit.distance
+                           : transform.position + transform.forward * uiHit.distance;
+
+            normal = (uiHit.worldNormal != Vector3.zero) ? uiHit.worldNormal : -transform.forward;
+            return true;
         }
 
         // 2) Hit sur surface 3D via Physics.Raycast depuis la ligne du rayon
@@ -109,7 +132,7 @@ public class XRLaserImpactDot : MonoBehaviour
             float   len    = Mathf.Min(Vector3.Distance(pts[0], pts[count - 1]), maxRayLength);
 
             if (Physics.Raycast(origin, dir, out RaycastHit hit3D, len, hitLayers,
-                                QueryTriggerInteraction.Ignore))
+                                QueryTriggerInteraction.Collide))
             {
                 position = hit3D.point;
                 normal   = hit3D.normal;

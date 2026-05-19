@@ -67,6 +67,9 @@ public class AtmosphericTurbulence : MonoBehaviour
     private float originalAirDensity;
     private float currentAltitude;
     private float weatherIntensity;
+
+    /// <summary>Intensité de turbulence actuelle [0-1], lue par XRFlightInput pour les vibrations.</summary>
+    public float CurrentTurbulenceIntensity { get; private set; }
     
     void Start()
     {
@@ -204,6 +207,9 @@ public class AtmosphericTurbulence : MonoBehaviour
         // Appliquer les forces avec l'intensité totale
         rb.AddForce(turbulenceForce * maxTurbulenceForce * totalIntensity, ForceMode.Force);
         rb.AddTorque(turbulenceTorque * maxTurbulenceTorque * totalIntensity, ForceMode.Force);
+
+        // Exposer l'intensité normalisée (clampée 0-1) pour les haptics
+        CurrentTurbulenceIntensity = Mathf.Clamp01(totalIntensity / baseTurbulenceIntensity);
         
         if (showDebugInfo && Time.frameCount % 60 == 0)
         {

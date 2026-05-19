@@ -29,6 +29,10 @@ public class XRMenuInput : MonoBehaviour
     [Tooltip("Bouton sélectionné au démarrage. Si vide, prend le 1er bouton trouvé.")]
     public Button firstSelectedButton;
 
+    [Header("Highlight")]
+    [Tooltip("Couleur du bouton actuellement sélectionné / survolé")]
+    public Color highlightColor = new Color(0.18f, 0.55f, 1f, 1f);
+
     // ---- Etat interne ----
     private InputDevice leftController;
     private InputDevice rightController;
@@ -37,12 +41,84 @@ public class XRMenuInput : MonoBehaviour
     private bool lastTriggerRight = false;
     private bool lastTriggerLeft  = false;
 
+    // Suivi du bouton sélectionné pour le highlight direct
+    private GameObject _previousSelected;
+    private Dictionary<Image, Color> _originalColors = new Dictionary<Image, Color>();
+
     // ---- Lifecycle ----
+
+    void Start()
+    {
+        CacheAllButtonColors();
+    }
 
     void OnEnable()
     {
         RefreshControllers();
         SelectFirstButton();
+    }
+
+    /// <summary>Mémorise les couleurs d'origine et désactive les transitions ColorBlock sur tous les boutons.</summary>
+    void CacheAllButtonColors()
+    {
+        Button[] buttons = FindObjectsOfType<Button>(true);
+        foreach (Button btn in buttons)
+        {
+            // Supprimer MenuButtonHighlight résiduel s'il existe
+            MenuButtonHighlight old = btn.GetComponent<MenuButtonHighlight>();
+            if (old != null) Destroy(old);
+
+            Image img = btn.GetComponent<Image>();
+            if (img != null && !_originalColors.ContainsKey(img))
+            {
+                // Utiliser normalColor du ColorBlock, pas img.color :
+                // au moment de Start(), le bouton initialement sélectionné a déjà
+                // sa couleur selectedColor appliquée sur l'image par Unity,
+                // ce qui fausserait le cache.
+                Color normal = btn.colors.normalColor;
+                _originalColors[img] = normal;
+                img.color = normal; // remettre immédiatement à la couleur normale
+            }
+
+            // Transition.None : empêche CrossFadeColor d'écraser notre couleur
+            btn.transition = Selectable.Transition.None;
+        }
+    }
+
+    /// <summary>
+    /// Appelé dans LateUpdate : force la couleur du bouton sélectionné APRÈS que
+    /// tous les autres systèmes (Button.DoStateTransition, CrossFadeColor) ont tourné.
+    /// Restaure la couleur normale sur l'ancien bouton quand la sélection change.
+    /// </summary>
+    void LateUpdateSelectionHighlight()
+    {
+        if (EventSystem.current == null) return;
+        GameObject current = EventSystem.current.currentSelectedGameObject;
+
+        // Restaurer l'ancien bouton si la sélection a changé
+        if (current != _previousSelected)
+        {
+            if (_previousSelected != null)
+            {
+                Image img = _previousSelected.GetComponent<Image>();
+                if (img != null && _originalColors.ContainsKey(img))
+                    img.color = _originalColors[img];
+            }
+            _previousSelected = current;
+        }
+
+        // Forcer la couleur chaque frame sur le bouton courant
+        // (écrase CrossFadeColor qui pourrait la réinitialiser après Update)
+        if (current != null)
+        {
+            Image img = current.GetComponent<Image>();
+            if (img != null)
+            {
+                if (!_originalColors.ContainsKey(img))
+                    _originalColors[img] = img.color;
+                img.color = highlightColor;
+            }
+        }
     }
 
     void Update()
@@ -76,6 +152,11 @@ public class XRMenuInput : MonoBehaviour
             InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller, devices);
         if (devices.Count > 0)
             rightController = devices[0];
+    }
+
+    void LateUpdate()
+    {
+        LateUpdateSelectionHighlight();
     }
 
     /// <summary>Sélectionne le premier bouton au démarrage.</summary>

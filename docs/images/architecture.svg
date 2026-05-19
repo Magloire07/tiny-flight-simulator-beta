@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 390" width="800" height="390" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#111820"/>
+      <stop offset="100%" style="stop-color:#18253a"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#6a90b0"/>
+    </marker>
+    <marker id="arrD" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#7a7a7a"/>
+    </marker>
+    <filter id="sh">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="390" fill="url(#bg)" rx="12"/>
+  <rect x="1" y="1" width="798" height="388" fill="none" stroke="#263850" stroke-width="1" rx="12"/>
+
+  <!-- Title -->
+  <text x="400" y="33" text-anchor="middle" font-size="16" font-weight="700" fill="#c8dff0" letter-spacing="0.5">Architecture Syst&#232;me &#8212; Tiny Flight Simulator VR</text>
+  <text x="400" y="50" text-anchor="middle" font-size="10" fill="#4a6888">Flux de donn&#233;es entre composants Unity &#183; Meta Quest 3S</text>
+  <line x1="30" y1="58" x2="770" y2="58" stroke="#263850" stroke-width="1"/>
+
+  <!-- ROW 1 -->
+
+  <!-- Quest 3S -->
+  <g filter="url(#sh)">
+    <rect x="22" y="76" width="132" height="118" rx="8" fill="#141d2c" stroke="#3a5878" stroke-width="1.5" stroke-dasharray="5,3"/>
+  </g>
+  <text x="88" y="99" text-anchor="middle" font-size="10" font-weight="600" fill="#8aaac4">Meta Quest 3S</text>
+  <line x1="34" y1="105" x2="142" y2="105" stroke="#263850" stroke-width="0.7"/>
+  <text x="88" y="120" text-anchor="middle" font-size="9" fill="#5a7898">Thumbsticks L / R</text>
+  <text x="88" y="134" text-anchor="middle" font-size="9" fill="#5a7898">Triggers &#183; Boutons</text>
+  <text x="88" y="148" text-anchor="middle" font-size="9" fill="#5a7898">A &#183; B &#183; Menu &#183; Meta</text>
+  <text x="88" y="168" text-anchor="middle" font-size="7" fill="#3a5878" font-style="italic">mat&#233;riel</text>
+
+  <!-- XRFlightInput.cs -->
+  <g filter="url(#sh)">
+    <rect x="196" y="66" width="188" height="128" rx="8" fill="#1a2535" stroke="#3d5a78" stroke-width="1.5"/>
+  </g>
+  <text x="290" y="89" text-anchor="middle" font-size="11" font-weight="700" fill="#c8dff0">XRFlightInput.cs</text>
+  <line x1="208" y1="96" x2="372" y2="96" stroke="#263850" stroke-width="0.7"/>
+  <text x="290" y="111" text-anchor="middle" font-size="9" fill="#8aabcc">Sticks L/R &#8594; pitch &#183; yaw &#183; roll</text>
+  <text x="290" y="125" text-anchor="middle" font-size="9" fill="#8aabcc">Stick R &#8594; throttle</text>
+  <text x="290" y="139" text-anchor="middle" font-size="9" fill="#8aabcc">G&#226;chette D &#8594; freins</text>
+  <text x="290" y="153" text-anchor="middle" font-size="9" fill="#8aabcc">A &#8594; moteur &#183; B &#8594; cam&#233;ra</text>
+  <text x="290" y="167" text-anchor="middle" font-size="9" fill="#8aabcc">XRMenuInput (navigation menus)</text>
+
+  <!-- Plane.cs -->
+  <g filter="url(#sh)">
+    <rect x="430" y="66" width="165" height="128" rx="8" fill="#1a2535" stroke="#3d5a78" stroke-width="2"/>
+  </g>
+  <text x="512" y="89" text-anchor="middle" font-size="11" font-weight="700" fill="#c8dff0">Plane.cs</text>
+  <line x1="442" y1="96" x2="583" y2="96" stroke="#263850" stroke-width="0.7"/>
+  <text x="512" y="111" text-anchor="middle" font-size="9" fill="#8aabcc">Pitch / Yaw / Roll / Throttle</text>
+  <text x="512" y="125" text-anchor="middle" font-size="9" fill="#8aabcc">A&#233;rodynamique + stall</text>
+  <text x="512" y="139" text-anchor="middle" font-size="9" fill="#8aabcc">EngineController</text>
+  <text x="512" y="153" text-anchor="middle" font-size="9" fill="#8aabcc">BrakeController</text>
+  <text x="512" y="167" text-anchor="middle" font-size="9" fill="#8aabcc">FuelSystem</text>
+
+  <!-- Physique &amp; Monde -->
+  <g filter="url(#sh)">
+    <rect x="642" y="66" width="140" height="128" rx="8" fill="#1a2535" stroke="#3d5a78" stroke-width="1.5"/>
+  </g>
+  <text x="712" y="89" text-anchor="middle" font-size="11" font-weight="700" fill="#c8dff0">Physique &amp; Monde</text>
+  <line x1="654" y1="96" x2="770" y2="96" stroke="#263850" stroke-width="0.7"/>
+  <text x="712" y="111" text-anchor="middle" font-size="9" fill="#8aabcc">AtmosphericTurbulence</text>
+  <text x="712" y="125" text-anchor="middle" font-size="9" fill="#8aabcc">DynamicWeatherSystem</text>
+  <text x="712" y="139" text-anchor="middle" font-size="9" fill="#8aabcc">WindEffect</text>
+  <text x="712" y="153" text-anchor="middle" font-size="9" fill="#8aabcc">AerodynamicProperties</text>
+  <text x="712" y="167" text-anchor="middle" font-size="9" fill="#8aabcc">MissionManager</text>
+
+  <!-- ROW 2 -->
+
+  <!-- Haptic Feedback -->
+  <g filter="url(#sh)">
+    <rect x="196" y="252" width="188" height="76" rx="8" fill="#1a2535" stroke="#3d5a78" stroke-width="1.5"/>
+  </g>
+  <text x="290" y="275" text-anchor="middle" font-size="11" font-weight="700" fill="#c8dff0">Haptic Feedback</text>
+  <line x1="208" y1="281" x2="372" y2="281" stroke="#263850" stroke-width="0.7"/>
+  <text x="290" y="296" text-anchor="middle" font-size="9" fill="#8aabcc">SendHapticImpulse() &#215; 2 manettes</text>
+  <text x="290" y="310" text-anchor="middle" font-size="9" fill="#8aabcc">amplitude + fr&#233;quence &#8594; turbulence</text>
+
+  <!-- UI VR &amp; HUD -->
+  <g filter="url(#sh)">
+    <rect x="430" y="252" width="165" height="76" rx="8" fill="#1a2535" stroke="#3d5a78" stroke-width="1.5"/>
+  </g>
+  <text x="512" y="275" text-anchor="middle" font-size="11" font-weight="700" fill="#c8dff0">UI VR &amp; HUD</text>
+  <line x1="442" y1="281" x2="583" y2="281" stroke="#263850" stroke-width="0.7"/>
+  <text x="512" y="296" text-anchor="middle" font-size="9" fill="#8aabcc">PlaneHUDUI &#183; XRUISetup</text>
+  <text x="512" y="310" text-anchor="middle" font-size="9" fill="#8aabcc">CameraViewSwitcher &#183; XRLaserImpactDot</text>
+
+  <!-- ARROWS - solid blue : flux principal -->
+
+  <!-- Quest 3S to XRFlightInput -->
+  <line x1="154" y1="130" x2="195" y2="130" stroke="#6a90b0" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- XRFlightInput to Plane.cs -->
+  <line x1="384" y1="130" x2="429" y2="130" stroke="#6a90b0" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="406" y="122" text-anchor="middle" font-size="7" fill="#4a7090">pitch&#183;yaw&#183;roll&#183;throttle</text>
+
+  <!-- XRFlightInput down to Haptic -->
+  <line x1="290" y1="194" x2="290" y2="251" stroke="#6a90b0" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- Plane.cs down to UI VR -->
+  <line x1="512" y1="194" x2="512" y2="251" stroke="#6a90b0" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ARROWS - dashed gray : effets physique -->
+
+  <!-- Physique to Plane.cs -->
+  <line x1="641" y1="148" x2="596" y2="148" stroke="#7a7a7a" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arrD)"/>
+  <text x="618" y="141" text-anchor="middle" font-size="7" fill="#5a6a7a">forces Rigidbody</text>
+
+  <!-- Physique to Haptic (L-shape) -->
+  <path d="M712,194 L712,362 L384,362 L384,328" stroke="#7a7a7a" stroke-width="1.2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrD)"/>
+  <text x="548" y="374" text-anchor="middle" font-size="8" fill="#505f70">CurrentTurbulenceIntensity &#8594; amplitude haptique</text>
+
+</svg>

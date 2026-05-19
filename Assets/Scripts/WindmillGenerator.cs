@@ -86,6 +86,7 @@ public class WindmillGenerator : MonoBehaviour
     // Données internes
     private List<GameObject> generatedObjects = new List<GameObject>();
     private List<WindmillData> windmills = new List<WindmillData>();
+    private WindmillData[] windmillsCache; // tableau caché pour éviter alloc d'enumerator en Update
     private System.Random random;
 
     void Start()
@@ -96,13 +97,12 @@ public class WindmillGenerator : MonoBehaviour
 
     void Update()
     {
-        // Faire tourner les pales de tous les moulins
-        foreach (WindmillData windmill in windmills)
+        if (windmillsCache == null) return;
+        float dt = Time.deltaTime;
+        for (int i = 0; i < windmillsCache.Length; i++)
         {
-            if (windmill.bladesTransform != null)
-            {
-                windmill.bladesTransform.Rotate(rotationAxis, windmill.rotationSpeed * Time.deltaTime);
-            }
+            if (windmillsCache[i].bladesTransform != null)
+                windmillsCache[i].bladesTransform.Rotate(rotationAxis, windmillsCache[i].rotationSpeed * dt);
         }
     }
 
@@ -137,6 +137,7 @@ public class WindmillGenerator : MonoBehaviour
             GenerateSingleWindmill(i);
         }
         
+        windmillsCache = windmills.ToArray(); // reconstruire le cache
         Debug.Log($"WindmillGenerator: {windmills.Count} moulins générés avec {generatedObjects.Count} objets au total.");
     }
 

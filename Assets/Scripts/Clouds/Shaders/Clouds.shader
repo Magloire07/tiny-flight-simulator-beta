@@ -18,6 +18,7 @@ Shader "Hidden/Clouds"
 
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
             #include "Assets/Scripts/Clouds/Shaders/CloudDebug.cginc"
@@ -26,16 +27,20 @@ Shader "Hidden/Clouds"
             struct appdata {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f {
                 float4 pos : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float3 viewVector : TEXCOORD1;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
             
             v2f vert (appdata v) {
                 v2f output;
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.pos = UnityObjectToClipPos(v.vertex);
                 output.uv = v.uv;
                 // Camera space matches OpenGL convention where cam forward is -z. In unity forward is positive z.
@@ -57,7 +62,7 @@ Shader "Hidden/Clouds"
             SamplerState samplerBlueNoise;
 
             sampler2D _MainTex;
-            sampler2D _CameraDepthTexture;
+            UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
             
             // Skybox support
             samplerCUBE _Skybox;
@@ -200,6 +205,7 @@ Shader "Hidden/Clouds"
                 float baseShapeDensity = shapeFBM + densityOffset * .1;
 
                 // Save sampling from detail tex if shape density <= 0
+                float density = 0;
                 if (baseShapeDensity > 0) {
                     // Sample detail noise
                     float3 detailSamplePos = uvw*detailNoiseScale + detailOffset * offsetSpeed + float3(time*.4,-time,time*0.1)*detailSpeed;
@@ -211,10 +217,10 @@ Shader "Hidden/Clouds"
                     float oneMinusShape = 1 - shapeFBM;
                     float detailErodeWeight = oneMinusShape * oneMinusShape * oneMinusShape;
                     float cloudDensity = baseShapeDensity - (1-detailFBM) * detailErodeWeight * detailNoiseWeight;
-    
-                    return cloudDensity * densityMultiplier * 0.1;
+
+                    density = cloudDensity * densityMultiplier * 0.1;
                 }
-                return 0;
+                return density;
             }
 
             // Calculate proportion of light that reaches the given point from the lightsource
@@ -266,6 +272,7 @@ Shader "Hidden/Clouds"
           
             float4 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 #if DEBUG_MODE == 1
                 if (debugViewMode != 0) {
                     float width = _ScreenParams.x;

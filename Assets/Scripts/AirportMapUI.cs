@@ -190,7 +190,7 @@ public class AirportMapUI : MonoBehaviour
         textRect.sizeDelta = new Vector2(-10, 30);
         
         airportCountText = textObj.AddComponent<Text>();
-        airportCountText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        airportCountText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         airportCountText.fontSize = 14;
         airportCountText.color = Color.white;
         airportCountText.alignment = TextAnchor.UpperCenter;

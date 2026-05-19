@@ -34,6 +34,8 @@ Shader "Custom/TerrainShader"
         CGPROGRAM
 
         #pragma surface surf Standard vertex:vert fullforwardshadows addshadow
+        #pragma multi_compile_instancing
+        #pragma instancing_options assumeidentical
 
         #pragma target 3.0
 
@@ -61,6 +63,7 @@ Shader "Custom/TerrainShader"
 
         void vert(inout appdata_full v, out Input data)
         {
+            UNITY_SETUP_INSTANCE_ID(v);
             UNITY_INITIALIZE_OUTPUT(Input, data);
             data.worldPosition = mul(unity_ObjectToWorld, v.vertex).xyz;
             data.localNormal = v.normal.xyz;

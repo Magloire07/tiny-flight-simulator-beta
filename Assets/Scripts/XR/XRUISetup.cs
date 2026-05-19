@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
 /// <summary>
@@ -14,14 +15,22 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 /// Ce script :
 /// - Remplace GraphicRaycaster par TrackedDeviceGraphicRaycaster sur chaque Canvas
 /// - Remplace StandaloneInputModule par XRUIInputModule sur l'EventSystem
-/// - Fonctionne en World Space ET Screen Space Overlay
+/// - Convertit les Canvas ScreenSpaceOverlay en WorldSpace quand la VR est active
 /// </summary>
 public class XRUISetup : MonoBehaviour
 {
+    [Tooltip("Distance devant la caméra pour les canvas HUD convertis en WorldSpace (mètres)")]
+    public float hudWorldDistance = 2f;
+
+    [Tooltip("Echelle appliquée aux canvas HUD convertis (pixels → mètres)")]
+    public float hudWorldScale = 0.001f;
+
     void Awake()
     {
         SetupEventSystem();
         SetupAllCanvases();
+        if (XRSettings.enabled)
+            ConvertOverlayCanvasesToWorldSpace();
     }
 
     void SetupEventSystem()
@@ -65,5 +74,39 @@ public class XRUISetup : MonoBehaviour
         }
 
         Debug.Log($"[XRUISetup] TrackedDeviceGraphicRaycaster ajouté sur {count} Canvas.");
+    }
+
+    void ConvertOverlayCanvasesToWorldSpace()
+    {
+        Camera mainCam = Camera.main;
+        if (mainCam == null)
+        {
+            Debug.LogWarning("[XRUISetup] Aucune Main Camera trouvée — impossible de convertir les Canvas overlay en WorldSpace.");
+            return;
+        }
+
+        Canvas[] canvases = FindObjectsOfType<Canvas>(true);
+        int converted = 0;
+
+        foreach (Canvas canvas in canvases)
+        {
+            if (canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                continue;
+
+            canvas.renderMode = RenderMode.WorldSpace;
+
+            // Attacher au GameObject de la caméra pour suivre le regard
+            canvas.transform.SetParent(mainCam.transform, false);
+
+            // Positionner devant la caméra
+            canvas.transform.localPosition = new Vector3(0f, 0f, hudWorldDistance);
+            canvas.transform.localRotation = Quaternion.identity;
+            canvas.transform.localScale = Vector3.one * hudWorldScale;
+
+            Debug.Log($"[XRUISetup] Canvas '{canvas.name}' converti en WorldSpace et attaché à la caméra.");
+            converted++;
+        }
+
+        Debug.Log($"[XRUISetup] {converted} Canvas ScreenSpaceOverlay convertis en WorldSpace pour la VR.");
     }
 }

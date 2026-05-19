@@ -10,9 +10,4 @@ public class SkyDomeScript : MonoBehaviour
         sunLight.GetComponent<Light>().type = LightType.Directional;*/
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }
