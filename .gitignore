@@ -97,3 +97,10 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# IL2CPP build artifacts
+cmp1_BackUpThisFolder_ButDontShipItWithYourGame/
+tiny-flight-simulator_BurstDebugInformation_DoNotShip/
+
+# Build symbol files
+*.symbols.zip

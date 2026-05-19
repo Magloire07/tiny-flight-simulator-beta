@@ -39,14 +39,14 @@
    - 8.6 [Stabilité au sol & Décollage](#86-stabilité-au-sol--décollage)
    - 8.7 [Missions et scénarios](#87-missions-et-scénarios)
 9. [Configuration Unity - Guide pas à pas](#9-configuration-unity--guide-pas-à-pas)
-10. [Captures d'écran - Guide de prise de vue](#10-captures-décran--guide-de-prise-de-vue)
-11. [Checklist d'optimisation VR](#11-checklist-doptimisation-vr)
-    - 11.1 [Diagnostic et outils de mesure](#111-diagnostic-et-outils-de-mesure)
-    - 11.2 [Optimisation des modèles 3D](#112-optimisation-des-modèles-3d)
-    - 11.3 [Optimisation de la complexité](#113-optimisation-de-la-complexité)
-    - 11.4 [Optimisation statique et batching](#114-optimisation-statique-et-batching)
-    - 11.5 [Optimisation de l'éclairage](#115-optimisation-de-léclairage)
-    - 11.6 [Paramètres projet et culling](#116-paramètres-projet-et-culling)
+10. [Checklist d'optimisation VR](#10-checklist-doptimisation-vr)
+    - 10.1 [Diagnostic et outils de mesure](#101-diagnostic-et-outils-de-mesure)
+    - 10.2 [Optimisation des modèles 3D](#102-optimisation-des-modèles-3d)
+    - 10.3 [Optimisation de la complexité](#103-optimisation-de-la-complexité)
+    - 10.4 [Optimisation statique et batching](#104-optimisation-statique-et-batching)
+    - 10.5 [Optimisation de l'éclairage](#105-optimisation-de-léclairage)
+    - 10.6 [Paramètres projet et culling](#106-paramètres-projet-et-culling)
+11. [Compilation apk](#10-captures-décran--guide-de-prise-de-vue)
 
 ---
 
@@ -701,86 +701,14 @@ File → Build Settings
 
 ---
 
-## 10. Captures d'écran - Guide de prise de vue
-
-Les captures suivantes sont recommandées pour compléter cette documentation. Prendre chaque capture dans Unity (Play Mode ou dans le casque via **Meta Quest Link** ou le **Screen Capture** de SideQuest).
-
-### 📷 Screenshot 1 - Vue extérieure en vol
-**Emplacement recommandé :** docs/images/screenshot-exterior-view.jpg
-
-Montrer l'avion en vol avec le HUD visible en WorldSpace. Idéalement avec des nuages et un beau ciel.
-
-**Comment prendre :** En vol, en vue extérieure, avec quelques nuages. Dans Unity, `Window → General → Game View`, puis `Ctrl+P` pour screenshot.
-
----
-
-### 📷 Screenshot 2 - Vue cockpit VR
-**Emplacement recommandé :** docs/images/screenshot-cockpit.jpg
-
-Vue depuis le cockpit avec les deux mains visibles sur le volant. Montrer le tableau de bord et le HUD.
-
-**Comment prendre :** Passer en vue cockpit (bouton B), prendre une capture depuis le casque ou via Meta Quest Link.
-
----
-
-### 📷 Screenshot 3 - Menu principal avec laser
-**Emplacement recommandé :** docs/images/screenshot-menu-laser.jpg
-
-Le menu principal avec un laser de manette pointant sur un bouton, et le point d'impact visible.
-
-**Comment prendre :** Au démarrage du jeu dans le casque, pointer une manette vers un bouton du menu.
-
----
-
-### 📷 Screenshot 4 - Turbulences et HUD
-**Emplacement recommandé :** docs/images/screenshot-turbulence.jpg
-
-Vol en altitude avec turbulences actives. Si possible, montrer l'indicateur de vitesse et d'altitude du HUD avec des valeurs élevées.
-
-**Comment prendre :** Monter à plus de 500 m d'altitude, augmenter `baseTurbulenceIntensity` dans l'Inspector pour une démo visuelle.
-
----
-
-### 📷 Screenshot 5 - Inspector XRFlightInput
-**Emplacement recommandé :** docs/images/screenshot-inspector-xrflightinput.jpg
-
-Capture de l'Inspector Unity montrant tous les paramètres du composant `XRFlightInput` avec les valeurs par défaut.
-
-**Comment prendre :** Sélectionner le GameObject portant `XRFlightInput` dans la Hierarchy, prendre une capture de l'Inspector.
-
----
-
-### 📷 Screenshot 6 - Inspector CockpitAutoGrab
-**Emplacement recommandé :** docs/images/screenshot-inspector-cockpit.jpg
-
-Inspector de `CockpitAutoGrab` montrant les références assignées et les offsets de position des mains.
-
----
-
-### 📷 Screenshot 7 - Sélection de piste (RunwayMenu en VR)
-**Emplacement recommandé :** docs/images/screenshot-runway-menu.jpg
-
-Le menu de sélection de piste avec le laser VR, montrant la navigation à la manette.
-
----
-
-*Pour intégrer une capture dans ce README, utiliser la syntaxe :*
-```markdown
-![Description](docs/images/screenshot-nom.jpg)
-```
-
----
-
----
-
-## 11. Checklist d'optimisation VR
+## 1O. Checklist d'optimisation VR
 
 > **Objectif cible Meta Quest 3S :** 72 Hz stables (13,8 ms par frame), GPU limité à 80 % maximum.  
 > Le Quest 3S est un appareil autonome sans GPU dédié - chaque ms compte.
 
 ---
 
-### 11.1 Diagnostic et outils de mesure
+### 10.1 Diagnostic et outils de mesure
 
 Avant toute optimisation, mesurer les vrais problèmes :
 
@@ -801,7 +729,7 @@ Avant toute optimisation, mesurer les vrais problèmes :
 
 ---
 
-### 11.2 Optimisation des modèles 3D
+### 10.2 Optimisation des modèles 3D
 
 #### Polycount
 - Utiliser des modèles LOD (Level of Detail) - Unity génère automatiquement des LOD via le composant **LOD Group**
@@ -826,7 +754,7 @@ Avant toute optimisation, mesurer les vrais problèmes :
 
 ---
 
-### 11.3 Optimisation de la complexité
+### 10.3 Optimisation de la complexité
 
 #### Physics Optimization
 - Réduire la fréquence du Fixed Timestep si possible : *Project Settings → Time → Fixed Timestep*  
@@ -837,6 +765,7 @@ Avant toute optimisation, mesurer les vrais problèmes :
 - Dans ce projet : le terrain utilise un `TerrainCollider` - valider qu'il n'interagit pas avec des objets lointains
 
 #### Script Optimization
+![optimisation](docs/images/count.png)
 - Éviter les appels `Find`, `GetComponent`, `Camera.main` dans `Update()` - les cacher en `Awake()` / `Start()`
 - `XRFlightInput.cs` est déjà optimisé : tous les `GetComponent` sont en `Awake()`
 - Utiliser `Time.deltaTime` plutôt que des Coroutines fréquentes pour les updates temporels
@@ -852,7 +781,7 @@ Avant toute optimisation, mesurer les vrais problèmes :
 
 ---
 
-### 11.4 Optimisation statique et batching
+### 10.4 Optimisation statique et batching
 
 #### Static Objects (Static Optimization)
 - Cocher **Static** dans l'Inspector pour tout objet qui ne bouge jamais (bâtiments, arbres, terrain)
@@ -869,8 +798,8 @@ Avant toute optimisation, mesurer les vrais problèmes :
 
 ---
 
-### 11.5 Optimisation de l'éclairage
-
+### 10.5 Optimisation de l'éclairage
+![optimisation](docs/images/lighting.png)
 #### Bake Lighting
 - Passer les lumières en mode **Baked** ou **Mixed** pour les lumières statiques de la scène
 - Lancer un *Bake* complet : *Window → Rendering → Lighting → Generate Lighting*
@@ -890,7 +819,7 @@ Avant toute optimisation, mesurer les vrais problèmes :
 
 ---
 
-### 11.6 Paramètres projet et culling
+### 10.6 Paramètres projet et culling
 
 #### Project Settings Optimization
 Paramètres clés pour Meta Quest 3S (*Edit → Project Settings*) :
@@ -933,8 +862,9 @@ Paramètres clés pour Meta Quest 3S (*Edit → Project Settings*) :
 <div align="center">
 
 ---
+## 11. compilation apk
 
-*Documentation générée le 18 mai 2026*  
-*Tiny Flight Simulator VR - Meta Quest 3S Edition*
-
+*Le jeu a été compilé mais impossible de jouer car la scène est  completement magenta, un problème d'affichage de shader en mode VR*
+![VR_View](docs/images/pinkVR.png)
 </div>
+
