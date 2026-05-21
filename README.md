@@ -866,5 +866,9 @@ Paramètres clés pour Meta Quest 3S (*Edit → Project Settings*) :
 
 *Le jeu a été compilé mais impossible de jouer car la scène est  completement magenta, un problème d'affichage de shader en mode VR*
 ![VR_View](docs/images/pinkVR.png)
+
+lien google drive vers le .apk(compte esiee)
+[tinyflightsimulator.apk](https://drive.google.com/file/d/1rFSFQu661F-DWRK0cRwFryoU8uNr1XHh/view?usp=sharing)
+
 </div>
 
