@@ -7,7 +7,7 @@
 
 **Simulateur de vol procédural en réalité virtuelle pour Meta Quest 3S**
 
-*Construit avec Unity 2023 · XR Interaction Toolkit 3.0.10 · OpenXR 1.14.0*
+*Construit avec Unity 6000.0.41f1 · XR Interaction Toolkit 3.0.10 · OpenXR 1.14.0*
 
 </div>
 
@@ -64,7 +64,7 @@
 
 | Technologie | Version |
 |---|---|
-| Unity | 2023.x |
+| Unity | 6000.0.41f1 |
 | XR Interaction Toolkit | 3.0.10 |
 | Meta OpenXR | 2.5.0 |
 | Oculus XR Plugin | 4.5.0 |
