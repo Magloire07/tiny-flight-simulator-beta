@@ -47,6 +47,7 @@ public class RunwayMenuController : MonoBehaviour
     private bool        _lastTriggerL = false;
 
     private GameObject _previousSelected;
+    private List<GraphicRaycaster> _disabledRaycasters = new List<GraphicRaycaster>();
 
     // Matériaux des éléments UI (instances séparées pour modifier les propriétés)
     private Material _panelBgMat;
@@ -80,6 +81,39 @@ public class RunwayMenuController : MonoBehaviour
         // Ne pas mettre en pause : l'avion est déjà immobile (contrôles désactivés par défaut)
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;
+        BlockOverlayRaycasters(true);
+    }
+
+    void OnDestroy()
+    {
+        BlockOverlayRaycasters(false);
+    }
+
+    /// <summary>Désactive/réactive le GraphicRaycaster des canvas overlay (simulateur XR) pendant que le menu est ouvert.</summary>
+    void BlockOverlayRaycasters(bool block)
+    {
+        if (block)
+        {
+            _disabledRaycasters.Clear();
+            foreach (Canvas c in FindObjectsOfType<Canvas>(true))
+            {
+                if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    GraphicRaycaster gr = c.GetComponent<GraphicRaycaster>();
+                    if (gr != null && gr.enabled)
+                    {
+                        gr.enabled = false;
+                        _disabledRaycasters.Add(gr);
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach (var gr in _disabledRaycasters)
+                if (gr != null) gr.enabled = true;
+            _disabledRaycasters.Clear();
+        }
     }
 
     void Update()
@@ -408,7 +442,10 @@ public class RunwayMenuController : MonoBehaviour
         if (_leftCtrl.isValid)
             _leftCtrl.TryGetFeatureValue(CommonUsages.triggerButton, out trigL);
 
-        bool pressed = trigR || trigL;
+        // Clic gauche souris / trackpad (= pincement main en simulateur XR)
+        bool mouseClick = Input.GetMouseButtonDown(0);
+
+        bool pressed = trigR || trigL || mouseClick;
         bool wasPressed = _lastTriggerR || _lastTriggerL;
 
         if (pressed && !wasPressed)

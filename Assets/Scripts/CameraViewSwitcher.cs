@@ -453,9 +453,6 @@ public class CameraViewSwitcher : MonoBehaviour
             mouseFlightController.enabled = false;
             Debug.Log("CameraViewSwitcher: MouseFlightController désactivé");
         }
-
-        // Fuselage double-face en vue cockpit
-        SetFuselageDoubleSided(true);
         
         // Appliquer le FOV cockpit (désactivé en VR, le headset contrôle le FOV)
         if (viewCamera != null && !UnityEngine.XR.XRSettings.enabled)
@@ -478,9 +475,6 @@ public class CameraViewSwitcher : MonoBehaviour
             mouseFlightController.enabled = true;
         }
 
-        // Restaurer le fuselage single-face (Cull Back)
-        SetFuselageDoubleSided(false);
-        
         // Restaurer le FOV de la vue externe (désactivé en VR, le headset contrôle le FOV)
         if (viewCamera != null && !UnityEngine.XR.XRSettings.enabled)
         {

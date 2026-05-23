@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.XR;
+
 using System.Collections.Generic;
 
 /// <summary>
@@ -41,24 +42,31 @@ public class XRMenuInput : MonoBehaviour
     private bool lastTriggerRight = false;
     private bool lastTriggerLeft  = false;
 
-    // Suivi du bouton sélectionné pour le highlight direct
+    // Ray Interactors XR (pour détecter le bouton survolé par le laser)
+    private UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor[] _rayInteractors;
+
+    // (legacy) Suivi du bouton sélectionné pour le highlight direct
     private GameObject _previousSelected;
     private Dictionary<Image, Color> _originalColors = new Dictionary<Image, Color>();
+    private List<GraphicRaycaster> _disabledRaycasters = new List<GraphicRaycaster>();
 
     // ---- Lifecycle ----
 
-    void Start()
-    {
-        CacheAllButtonColors();
-    }
+    void Start() { }
 
     void OnEnable()
     {
+        CacheAllButtonColors();
         RefreshControllers();
+        _rayInteractors = FindObjectsOfType<UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor>();
         SelectFirstButton();
     }
 
-    /// <summary>Mémorise les couleurs d'origine et désactive les transitions ColorBlock sur tous les boutons.</summary>
+    void OnDisable()
+    {
+    }
+
+    /// <summary>Configure le ColorBlock de chaque bouton pour que hover (laser) et sélection (joystick) affichent highlightColor.</summary>
     void CacheAllButtonColors()
     {
         Button[] buttons = FindObjectsOfType<Button>(true);
@@ -68,58 +76,55 @@ public class XRMenuInput : MonoBehaviour
             MenuButtonHighlight old = btn.GetComponent<MenuButtonHighlight>();
             if (old != null) Destroy(old);
 
-            Image img = btn.GetComponent<Image>();
-            if (img != null && !_originalColors.ContainsKey(img))
-            {
-                // Utiliser normalColor du ColorBlock, pas img.color :
-                // au moment de Start(), le bouton initialement sélectionné a déjà
-                // sa couleur selectedColor appliquée sur l'image par Unity,
-                // ce qui fausserait le cache.
-                Color normal = btn.colors.normalColor;
-                _originalColors[img] = normal;
-                img.color = normal; // remettre immédiatement à la couleur normale
-            }
+            // Configurer les couleurs hover/select dans le ColorBlock
+            ColorBlock cb = btn.colors;
+            cb.highlightedColor = highlightColor;
+            cb.selectedColor    = highlightColor;
+            cb.pressedColor     = new Color(highlightColor.r * 0.7f, highlightColor.g * 0.7f, highlightColor.b * 0.7f, highlightColor.a);
+            btn.colors = cb;
 
-            // Transition.None : empêche CrossFadeColor d'écraser notre couleur
-            btn.transition = Selectable.Transition.None;
+            // ColorTint : Unity gère hover/select/press via CrossFadeColor nativement
+            btn.transition = Selectable.Transition.ColorTint;
+
+            // Empêcher la navigation clavier vers les éléments hors menu (ex: panneau simulateur XR)
+            Canvas parentCanvas = btn.GetComponentInParent<Canvas>(true);
+            if (parentCanvas != null && parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                Navigation nav = btn.navigation;
+                nav.mode = Navigation.Mode.None;
+                btn.navigation = nav;
+            }
         }
     }
 
-    /// <summary>
-    /// Appelé dans LateUpdate : force la couleur du bouton sélectionné APRÈS que
-    /// tous les autres systèmes (Button.DoStateTransition, CrossFadeColor) ont tourné.
-    /// Restaure la couleur normale sur l'ancien bouton quand la sélection change.
-    /// </summary>
-    void LateUpdateSelectionHighlight()
+    /// <summary>Désactive/réactive le GraphicRaycaster des canvas overlay (simulateur XR) pendant que le menu est ouvert.</summary>
+    void BlockOverlayRaycasters(bool block)
     {
-        if (EventSystem.current == null) return;
-        GameObject current = EventSystem.current.currentSelectedGameObject;
-
-        // Restaurer l'ancien bouton si la sélection a changé
-        if (current != _previousSelected)
+        if (block)
         {
-            if (_previousSelected != null)
+            _disabledRaycasters.Clear();
+            foreach (Canvas c in FindObjectsOfType<Canvas>(true))
             {
-                Image img = _previousSelected.GetComponent<Image>();
-                if (img != null && _originalColors.ContainsKey(img))
-                    img.color = _originalColors[img];
+                if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    GraphicRaycaster gr = c.GetComponent<GraphicRaycaster>();
+                    if (gr != null && gr.enabled)
+                    {
+                        gr.enabled = false;
+                        _disabledRaycasters.Add(gr);
+                    }
+                }
             }
-            _previousSelected = current;
         }
-
-        // Forcer la couleur chaque frame sur le bouton courant
-        // (écrase CrossFadeColor qui pourrait la réinitialiser après Update)
-        if (current != null)
+        else
         {
-            Image img = current.GetComponent<Image>();
-            if (img != null)
-            {
-                if (!_originalColors.ContainsKey(img))
-                    _originalColors[img] = img.color;
-                img.color = highlightColor;
-            }
+            foreach (var gr in _disabledRaycasters)
+                if (gr != null) gr.enabled = true;
+            _disabledRaycasters.Clear();
         }
     }
+
+    // LateUpdateSelectionHighlight() supprimé — ColorTint gère hover/select nativement via CrossFadeColor
 
     void Update()
     {
@@ -154,10 +159,7 @@ public class XRMenuInput : MonoBehaviour
             rightController = devices[0];
     }
 
-    void LateUpdate()
-    {
-        LateUpdateSelectionHighlight();
-    }
+    void LateUpdate() { }
 
     /// <summary>Sélectionne le premier bouton au démarrage.</summary>
     void SelectFirstButton()
@@ -265,15 +267,45 @@ public class XRMenuInput : MonoBehaviour
         if (leftController.isValid)
             leftController.TryGetFeatureValue(CommonUsages.triggerButton, out triggerLeft);
 
+        // Clic souris = gâchette simulée dans XR Device Simulator
+        bool mouseClick = Input.GetMouseButtonDown(0);
+
         bool pressed = triggerRight || triggerLeft;
         bool wasPressedBefore = lastTriggerRight || lastTriggerLeft;
 
-        // Front montant uniquement (évite le maintien répété)
-        if (pressed && !wasPressedBefore)
-            ClickSelected();
+        // Front montant uniquement pour les gâchettes matérielles
+        if ((pressed && !wasPressedBefore) || mouseClick)
+        {
+            // Essayer d'abord de cliquer l'objet UI directement sous le laser
+            if (!TryClickRayTarget())
+                ClickSelected(); // Fallback : cliquer le bouton sélectionné au joystick
+        }
 
         lastTriggerRight = triggerRight;
         lastTriggerLeft  = triggerLeft;
+    }
+
+    /// <summary>
+    /// Clique le bouton UI actuellement survolé par un XR Ray Interactor.
+    /// Retourne true si un bouton a été cliqué.
+    /// </summary>
+    bool TryClickRayTarget()
+    {
+        if (_rayInteractors == null) return false;
+        foreach (var ri in _rayInteractors)
+        {
+            if (ri == null || !ri.isActiveAndEnabled) continue;
+            if (ri.TryGetCurrentUIRaycastResult(out var result) && result.gameObject != null)
+            {
+                Button btn = result.gameObject.GetComponentInParent<Button>();
+                if (btn != null && btn.interactable)
+                {
+                    btn.onClick.Invoke();
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /// <summary>Exécute le clic sur le GameObject actuellement sélectionné.</summary>

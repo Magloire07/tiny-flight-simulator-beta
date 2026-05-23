@@ -99,6 +99,10 @@ public class MainMenuController : MonoBehaviour
 
     void Start()
     {
+        // Confiner le curseur dans la fenêtre de jeu (visible mais ne sort pas)
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
+
         // Créer l'AudioSource
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;

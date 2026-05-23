@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
 using System.Collections.Generic;
 using MFlight.Demo;
 using DemoPlane = MFlight.Demo.Plane;
@@ -93,12 +95,18 @@ public class XRFlightInput : MonoBehaviour
     public bool rightControllerFound = false;
 
     // ── Etat interne ────────────────────────────────────────────────────────
-    private InputDevice leftCtrl;
-    private InputDevice rightCtrl;
+    // Input Actions (nouveau Input System — compatibles XR Device Simulator)
+    private InputAction m_LeftStickAction;
+    private InputAction m_RightStickAction;
+    private InputAction m_RightTriggerAction;
+    private InputAction m_EngineToggleAction;
 
     private bool lastAButton = false;
-    private bool lastBButton = false;
     private float hapticTimer = 0f;
+
+    // Legacy XR — conservé uniquement pour les vibrations haptic
+    private UnityEngine.XR.InputDevice leftCtrl;
+    private UnityEngine.XR.InputDevice rightCtrl;
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
     void Awake()
@@ -118,8 +126,19 @@ public class XRFlightInput : MonoBehaviour
 
     void OnEnable()
     {
+        // ── Nouveau Input System (fonctionne avec simulateur ET vraies manettes) ──
+        m_LeftStickAction    = new InputAction("LeftStick",    InputActionType.Value,  "<XRController>{LeftHand}/primary2DAxis");
+        m_RightStickAction   = new InputAction("RightStick",   InputActionType.Value,  "<XRController>{RightHand}/primary2DAxis");
+        m_RightTriggerAction = new InputAction("RightTrigger", InputActionType.Value,  "<XRController>{RightHand}/trigger");
+        m_EngineToggleAction = new InputAction("EngineToggle", InputActionType.Button, "<XRController>{RightHand}/primaryButton");
+
+        m_LeftStickAction.Enable();
+        m_RightStickAction.Enable();
+        m_RightTriggerAction.Enable();
+        m_EngineToggleAction.Enable();
+
+        // Legacy — pour les vibrations haptic uniquement
         RefreshControllers();
-        // S'abonner aux évènements de connexion/déconnexion
         InputDevices.deviceConnected    += OnDeviceConnected;
         InputDevices.deviceDisconnected += OnDeviceDisconnected;
 
@@ -129,6 +148,11 @@ public class XRFlightInput : MonoBehaviour
 
     void OnDisable()
     {
+        m_LeftStickAction?.Disable();    m_LeftStickAction?.Dispose();
+        m_RightStickAction?.Disable();   m_RightStickAction?.Dispose();
+        m_RightTriggerAction?.Disable(); m_RightTriggerAction?.Dispose();
+        m_EngineToggleAction?.Disable(); m_EngineToggleAction?.Dispose();
+
         InputDevices.deviceConnected    -= OnDeviceConnected;
         InputDevices.deviceDisconnected -= OnDeviceDisconnected;
 
@@ -140,57 +164,44 @@ public class XRFlightInput : MonoBehaviour
     {
         if (plane == null) return;
 
-        // ── Lecture sticks ────────────────────────────────────────────────
-        Vector2 leftStick  = Vector2.zero;
-        Vector2 rightStick = Vector2.zero;
+        // ── Mise à jour état manettes détectées (Info Inspector) ──────────
+        leftControllerFound  = m_LeftStickAction?.controls.Count  > 0;
+        rightControllerFound = m_RightStickAction?.controls.Count > 0;
 
-        if (leftControllerFound)
-            leftCtrl.TryGetFeatureValue(CommonUsages.primary2DAxis, out leftStick);
-        if (rightControllerFound)
-            rightCtrl.TryGetFeatureValue(CommonUsages.primary2DAxis, out rightStick);
+        // ── Lecture sticks (nouveau Input System) ─────────────────────────
+        Vector2 leftStick  = m_LeftStickAction?.ReadValue<Vector2>()  ?? Vector2.zero;
+        Vector2 rightStick = m_RightStickAction?.ReadValue<Vector2>() ?? Vector2.zero;
 
         // Deadzone circulaire
         if (leftStick.magnitude  < joystickDeadzone) leftStick  = Vector2.zero;
         if (rightStick.magnitude < joystickDeadzone) rightStick = Vector2.zero;
 
         // ── Commandes de vol ─────────────────────────────────────────────
-        // Stick gauche : roulis + tangage (inversé : avant = nez bas)
         plane.Roll  = Mathf.Clamp( leftStick.x  * rollSensitivity,  -1f, 1f);
         plane.Pitch = Mathf.Clamp(-leftStick.y  * pitchSensitivity, -1f, 1f);
-
-        // Stick droit  : lacet (X) + gaz (Y)
-        plane.Yaw = Mathf.Clamp(rightStick.x * yawSensitivity, -1f, 1f);
+        plane.Yaw   = Mathf.Clamp( rightStick.x * yawSensitivity,   -1f, 1f);
 
         float throttleDelta = rightStick.y * throttleChangeRate * Time.deltaTime;
         plane.throttle = Mathf.Clamp01(plane.throttle + throttleDelta);
 
         // ── Freins (gâchette droite maintenue) ────────────────────────────
-        if (brakeController != null && rightControllerFound)
+        if (brakeController != null)
         {
-            float rightTrigger = 0f;
-            rightCtrl.TryGetFeatureValue(CommonUsages.trigger, out rightTrigger);
+            float rightTrigger = m_RightTriggerAction?.ReadValue<float>() ?? 0f;
             brakeController.brakesOn = rightTrigger > brakeThreshold;
         }
 
         // ── Bouton A → moteur ON/OFF (front montant) ──────────────────────
-        if (engineController != null && rightControllerFound)
+        if (engineController != null)
         {
-            bool aPressed = false;
-            rightCtrl.TryGetFeatureValue(CommonUsages.primaryButton, out aPressed);
+            bool aPressed = m_EngineToggleAction?.IsPressed() ?? false;
             if (aPressed && !lastAButton)
                 engineController.ToggleEngine();
             lastAButton = aPressed;
         }
 
-        // ── Bouton B → changer vue caméra (front montant) ─────────────────
-        if (cameraViewSwitcher != null && rightControllerFound)
-        {
-            bool bPressed = false;
-            rightCtrl.TryGetFeatureValue(CommonUsages.secondaryButton, out bPressed);
-            if (bPressed && !lastBButton)
-                cameraViewSwitcher.ToggleView();
-            lastBButton = bPressed;
-        }
+
+
         // ── Vibrations turbulences ─────────────────────────────────────────
         UpdateTurbulenceHaptics();
     }
@@ -199,8 +210,8 @@ public class XRFlightInput : MonoBehaviour
 
     void RefreshControllers()
     {
-        var leftList  = new List<InputDevice>();
-        var rightList = new List<InputDevice>();
+        var leftList  = new List<UnityEngine.XR.InputDevice>();
+        var rightList = new List<UnityEngine.XR.InputDevice>();
 
         InputDevices.GetDevicesWithCharacteristics(
             InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller, leftList);
@@ -214,8 +225,8 @@ public class XRFlightInput : MonoBehaviour
         else                      {                            rightControllerFound = false; }
     }
 
-    private void OnDeviceConnected(InputDevice device)    => RefreshControllers();
-    private void OnDeviceDisconnected(InputDevice device) => RefreshControllers();
+    private void OnDeviceConnected(UnityEngine.XR.InputDevice device)    => RefreshControllers();
+    private void OnDeviceDisconnected(UnityEngine.XR.InputDevice device) => RefreshControllers();
 
     // ── Haptics turbulences ──────────────────────────────────────────────────────────────
     void UpdateTurbulenceHaptics()
