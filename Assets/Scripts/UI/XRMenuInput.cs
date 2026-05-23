@@ -59,7 +59,6 @@ public class XRMenuInput : MonoBehaviour
         CacheAllButtonColors();
         RefreshControllers();
         _rayInteractors = FindObjectsOfType<UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor>();
-        SelectFirstButton();
     }
 
     void OnDisable()
@@ -133,9 +132,6 @@ public class XRMenuInput : MonoBehaviour
         // Revalide les contrôleurs si déconnectés
         if (!leftController.isValid || !rightController.isValid)
             RefreshControllers();
-
-        // Si rien n'est sélectionné (changement de panneau), re-sélectionner auto
-        EnsureSelection();
 
         HandleNavigation();
         HandleClick();

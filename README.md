@@ -46,8 +46,8 @@
     - 10.4 [Optimisation statique et batching](#104-optimisation-statique-et-batching)
     - 10.5 [Optimisation de l'éclairage](#105-optimisation-de-léclairage)
     - 10.6 [Paramètres projet et culling](#106-paramètres-projet-et-culling)
-11. [Compilation apk](#10-captures-décran--guide-de-prise-de-vue)
-
+11. [Compilation apk](#11-compilation-apk)
+12. [Video démo](#12-video-demo)
 ---
 
 ## 1. Présentation du projet
@@ -856,12 +856,9 @@ Paramètres clés pour Meta Quest 3S (*Edit → Project Settings*) :
   // Exemple : cacher les ombres à longue distance
   Camera.main.layerCullDistances = new float[] { ... };
   ```
-
 ---
 
-<div align="center">
-
----
+<a id="11-compilation-apk"></a>
 ## 11. compilation apk
 
 *Le jeu a été compilé mais impossible de jouer car la scène est  completement magenta, un problème d'affichage de shader en mode VR*
@@ -870,5 +867,11 @@ Paramètres clés pour Meta Quest 3S (*Edit → Project Settings*) :
 lien google drive vers le .apk(compte esiee)
 [tinyflightsimulator.apk](https://drive.google.com/file/d/1rFSFQu661F-DWRK0cRwFryoU8uNr1XHh/view?usp=sharing)
 
-</div>
+---
+
+<a id="12-video-demo"></a>
+## 12. VIDEO DEMO
+
+[video démo](https://drive.google.com/file/d/104XC_rTUR8OJJxlPbvPEy4MqQHUE_4Mn/view?usp=sharing)
+
 
