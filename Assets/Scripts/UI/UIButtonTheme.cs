@@ -88,15 +88,13 @@ public class UIButtonTheme : MonoBehaviour
 
     void ApplyToButton(Button btn)
     {
-        // --- ColorBlock ---
+        // --- ColorBlock (fond normal et désactivé uniquement) ---
+        // highlightedColor / selectedColor / pressedColor / fadeDuration
+        // sont gérés par XRMenuInput.CacheAllButtonColors() — on ne les écrase pas.
         ColorBlock cb = btn.colors;
-        cb.normalColor      = normalColor;
-        cb.highlightedColor = highlightedColor;
-        cb.pressedColor     = pressedColor;
-        cb.selectedColor    = selectedColor;
-        cb.disabledColor    = disabledColor;
-        cb.fadeDuration     = fadeDuration;
-        cb.colorMultiplier  = 1f;
+        cb.normalColor   = normalColor;
+        cb.disabledColor = disabledColor;
+        cb.colorMultiplier = 1f;
         btn.colors = cb;
 
         // --- Couleur de l'image de fond du bouton ---

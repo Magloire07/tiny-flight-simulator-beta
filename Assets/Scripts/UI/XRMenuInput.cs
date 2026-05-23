@@ -32,7 +32,7 @@ public class XRMenuInput : MonoBehaviour
 
     [Header("Highlight")]
     [Tooltip("Couleur du bouton actuellement sélectionné / survolé")]
-    public Color highlightColor = new Color(0.18f, 0.55f, 1f, 1f);
+    public Color highlightColor = new Color(0f, 0.82f, 1f, 1f);
 
     // ---- Etat interne ----
     private InputDevice leftController;
@@ -80,7 +80,9 @@ public class XRMenuInput : MonoBehaviour
             ColorBlock cb = btn.colors;
             cb.highlightedColor = highlightColor;
             cb.selectedColor    = highlightColor;
-            cb.pressedColor     = new Color(highlightColor.r * 0.7f, highlightColor.g * 0.7f, highlightColor.b * 0.7f, highlightColor.a);
+            cb.pressedColor     = new Color(highlightColor.r * 0.6f, highlightColor.g * 0.6f, highlightColor.b * 0.6f, highlightColor.a);
+            cb.colorMultiplier  = 1f;   // garantit que la couleur n'est pas atténuée
+            cb.fadeDuration     = 0.05f; // transition quasi-instantanée
             btn.colors = cb;
 
             // ColorTint : Unity gère hover/select/press via CrossFadeColor nativement
