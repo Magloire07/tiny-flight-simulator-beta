@@ -13,7 +13,10 @@
 </div>
 
 ---
-## Membres du groupe:
+ ESIEE Paris
+ Unité Projet Multidisciplinaire 4 
+ Session 2025/2026
+ E4FI Groupe 3I : 
  - Kokou KOMBEDE
  - Ounissa SADAOUI
 ---
@@ -52,6 +55,7 @@
     - 10.6 [Paramètres projet et culling](#106-paramètres-projet-et-culling)
 11. [Compilation apk](#11-compilation-apk)
 12. [Video démo](#12-video-demo)
+13. [Lien miro board](#13-miro-board)
 ---
 
 ## 1. Présentation du projet
@@ -878,4 +882,9 @@ lien google drive vers le .apk(compte esiee)
 
 [video démo](https://drive.google.com/file/d/104XC_rTUR8OJJxlPbvPEy4MqQHUE_4Mn/view?usp=sharing)
 
+<a id ="13-miro-board"></a>
+## 13. Lien vers le Miro
+[Lien miro board](https://miro.com/app/board/uXjVHOqw6QE=/?share_link_id=534204115862)
 
+---
+Ounissa & Kokou 2025/2026
