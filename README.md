@@ -13,9 +13,9 @@
 </div>
 
 ---
- ESIEE Paris
- Unité Projet Multidisciplinaire 4 
- Session 2025/2026
+ ESIEE Paris <br>
+ Unité Projet Multidisciplinaire 4 <br>
+ Session 2025/2026 <br>
  E4FI Groupe 3I : 
  - Kokou KOMBEDE
  - Ounissa SADAOUI
