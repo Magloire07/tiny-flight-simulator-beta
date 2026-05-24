@@ -9,13 +9,14 @@
 
 *Construit avec Unity 6000.0.41f1 · XR Interaction Toolkit 3.0.10 · OpenXR 1.14.0*
 
-Membres du groupe:
- - Kokou KOMBEDE
- - Ounissa SADAOUI
+
 </div>
 
 ---
-
+## Membres du groupe:
+ - Kokou KOMBEDE
+ - Ounissa SADAOUI
+---
 ## Table des matières
 
 1. [Présentation du projet](#1-présentation-du-projet)
